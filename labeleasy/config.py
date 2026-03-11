@@ -18,6 +18,15 @@ def get_app_dir() -> Path:
         return Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def get_resource_path(relative_path: str) -> Path:
+    """获取资源文件路径（支持打包后路径）"""
+    if getattr(sys, 'frozen', False):
+        base_path = Path(sys._MEIPASS)
+    else:
+        base_path = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return base_path / relative_path
+
+
 class ConfigManager:
     def __init__(self):
         self.config_file = get_app_dir() / 'config.json'

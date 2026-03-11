@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox
 )
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QKeySequence, QCursor
+from PyQt5.QtGui import QKeySequence, QCursor, QIcon
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
@@ -22,6 +22,7 @@ from .dialogs import ConfigDialog, SaveConfirmDialog, TemplateEditDialog
 from .config import ConfigManager
 from .utils import get_image_files, get_label_path, load_annotations, save_annotations
 from .constants import KEYPOINT_KEY_MAP, KEYBOARD_LAYOUT
+from .config import get_app_dir, get_resource_path
 
 
 MAX_UNDO_HISTORY = 50
@@ -88,8 +89,12 @@ class KeypointVisDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Lableasy")
+        self.setWindowTitle("labeleasy")
         self.setMinimumSize(1200, 800)
+        
+        icon_path = get_resource_path("labeleasy/icon.ico")
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
         
         self.template: Optional[Template] = None
         self.image_dir: str = ""

@@ -61,9 +61,14 @@ class Canvas(QWidget):
     
     def set_image(self, image_path: str):
         self.image_path = image_path
-        self.image = cv2.imread(image_path)
-        if self.image is not None:
-            self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        try:
+            with open(image_path, 'rb') as f:
+                img_data = np.frombuffer(f.read(), dtype=np.uint8)
+            self.image = cv2.imdecode(img_data, cv2.IMREAD_COLOR)
+            if self.image is not None:
+                self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        except Exception:
+            self.image = None
         self.update()
     
     def set_annotations(self, annotations: List[Annotation]):
