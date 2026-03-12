@@ -524,8 +524,9 @@ class Canvas(QWidget):
         
         ann = self.annotations[self.selected_annotation_idx]
         
-        x = max(ann.x_center - ann.width/2, min(ann.x_center + ann.width/2, x))
-        y = max(ann.y_center - ann.height/2, min(ann.y_center + ann.height/2, y))
+        # 取消关键点必须在框内的限制
+        # x = max(ann.x_center - ann.width/2, min(ann.x_center + ann.width/2, x))
+        # y = max(ann.y_center - ann.height/2, min(ann.y_center + ann.height/2, y))
         
         while len(ann.keypoints) <= self.current_keypoint_id:
             ann.keypoints.append(Keypoint(x=0.5, y=0.5, vis=0))
