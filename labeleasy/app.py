@@ -444,7 +444,7 @@ class MainWindow(QMainWindow):
             
             if self.template:
                 for kp_idx, kp in enumerate(ann.keypoints):
-                    if kp.vis > 0 and kp_idx < len(self.template.keypoints):
+                    if kp_idx < len(self.template.keypoints):
                         kp_name = self.template.keypoints[kp_idx]
                         vis_str = {0: "忽略", 1: "遮挡", 2: "可见"}.get(kp.vis, "?")
                         shortcut = self.canvas.get_keypoint_shortcut(kp_idx)
