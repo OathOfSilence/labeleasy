@@ -623,6 +623,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("请先选择目标标注框")
             return
         
+        self.save_undo_state()
         self.canvas.paste_keypoints()
         self.annotations = self.canvas.annotations
         self.modified = True
