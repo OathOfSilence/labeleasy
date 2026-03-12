@@ -77,8 +77,19 @@ class ConfigManager:
     def set_auto_save(self, value: bool):
         self._config['auto_save'] = value
     
-    def get_last_image(self) -> Optional[str]:
-        return self._config.get('last_image')
+    def get_project_key(self, image_dir: str, label_dir: str) -> str:
+        """生成项目唯一标识"""
+        return f"{image_dir}||{label_dir}"
     
-    def set_last_image(self, path: str):
-        self._config['last_image'] = path
+    def get_last_image(self, image_dir: str, label_dir: str) -> Optional[str]:
+        """获取项目相关的上次打开的图片"""
+        project_key = self.get_project_key(image_dir, label_dir)
+        projects_last_images = self._config.get('last_images', {})
+        return projects_last_images.get(project_key)
+    
+    def set_last_image(self, path: str, image_dir: str, label_dir: str):
+        """设置项目相关的上次打开的图片"""
+        project_key = self.get_project_key(image_dir, label_dir)
+        if 'last_images' not in self._config:
+            self._config['last_images'] = {}
+        self._config['last_images'][project_key] = path

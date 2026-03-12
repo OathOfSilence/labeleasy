@@ -330,7 +330,11 @@ class MainWindow(QMainWindow):
     def save_config(self):
         self.config_manager.set_auto_save(self.auto_save)
         if self.image_files and self.current_image_idx >= 0:
-            self.config_manager.set_last_image(self.image_files[self.current_image_idx])
+            self.config_manager.set_last_image(
+                self.image_files[self.current_image_idx],
+                self.image_dir,
+                self.label_dir
+            )
         self.config_manager.save()
     
     def show_config_dialog(self) -> bool:
@@ -365,7 +369,7 @@ class MainWindow(QMainWindow):
             self.image_list.addItem(os.path.basename(f))
         
         if self.image_files:
-            last_image = self.config_manager.get_last_image()
+            last_image = self.config_manager.get_last_image(self.image_dir, self.label_dir)
             start_idx = 0
             if last_image:
                 for i, f in enumerate(self.image_files):
