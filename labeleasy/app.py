@@ -554,10 +554,16 @@ class MainWindow(QMainWindow):
             self.save_current_annotations()
     
     def on_keypoint_shortcut(self, kp_id: int):
-        if self.canvas.selected_annotation_idx >= 0:
-            self.canvas.start_keypoint_drawing(kp_id)
-            if self.template and kp_id < len(self.template.keypoints):
-                self.status_bar.showMessage(f"绘制关键点 [{self.canvas.get_keypoint_shortcut(kp_id)}]: {self.template.keypoints[kp_id]} - 点击框内位置")
+        if self.canvas.selected_annotation_idx < 0:
+            return
+        if not self.template:
+            return
+        if kp_id >= len(self.template.keypoints):
+            self.status_bar.showMessage(f"关键点索引 {kp_id} 超出范围 (模板共 {len(self.template.keypoints)} 个关键点)")
+            return
+        
+        self.canvas.start_keypoint_drawing(kp_id)
+        self.status_bar.showMessage(f"绘制关键点 [{self.canvas.get_keypoint_shortcut(kp_id)}]: {self.template.keypoints[kp_id]} - 点击框内位置")
     
     def prev_image(self):
         if self.current_image_idx > 0:
