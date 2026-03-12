@@ -384,11 +384,37 @@ class Canvas(QWidget):
     
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
+        if delta == 0:
+            return
+        
+        if self.image is None:
+            return
+        
+        # 获取鼠标位置（屏幕坐标）
+        mouse_pos = event.position().toPoint()
+        
+        # 将鼠标位置转换为图像归一化坐标（0-1）
+        img_x, img_y = self.screen_to_img(mouse_pos.x(), mouse_pos.y())
+        
+        # 应用缩放
         if delta > 0:
             self.scale *= 1.1
         else:
             self.scale /= 1.1
-        self.scale = max(0.1, min(10.0, self.scale))
+        self.scale = max(0.2, min(5.0, self.scale))  # 缩放范围：0.2x - 5.0x
+        
+        # 计算新的 offset，使鼠标位置保持对应同一个图像点
+        # 公式：offset = mouse_screen - img_normalized * (image_size * scale) - center_offset
+        h, w = self.image.shape[:2]
+        img_w = w * self.scale
+        img_h = h * self.scale
+        
+        new_offset_x = mouse_pos.x() - img_x * img_w - (self.width() - img_w) / 2
+        new_offset_y = mouse_pos.y() - img_y * img_h - (self.height() - img_h) / 2
+        
+        self.offset.setX(int(new_offset_x))
+        self.offset.setY(int(new_offset_y))
+        
         self.update()
     
     def drag_resize_bbox(self, screen_pos: QPoint):
