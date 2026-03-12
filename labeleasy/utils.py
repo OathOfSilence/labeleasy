@@ -78,15 +78,15 @@ def parse_yolo_line(line: str, num_keypoints: int, line_num: int) -> Tuple[Optio
                 kp_vis = 2
                 warnings_list.append(f"行 {line_num}: 关键点vis值无效，已设为2")
             
-            x1 = x_center - width / 2
-            x2 = x_center + width / 2
-            y1 = y_center - height / 2
-            y2 = y_center + height / 2
-            
-            if not (x1 <= kp_x <= x2 and y1 <= kp_y <= y2):
-                kp_x = max(x1, min(x2, kp_x))
-                kp_y = max(y1, min(y2, kp_y))
-                warnings_list.append(f"行 {line_num}: 关键点不在框内，已截断")
+            # 取消关键点必须在框内的限制，只保留 0-1 范围限制
+            # x1 = x_center - width / 2
+            # x2 = x_center + width / 2
+            # y1 = y_center - height / 2
+            # y2 = y_center + height / 2
+            # if not (x1 <= kp_x <= x2 and y1 <= kp_y <= y2):
+            #     kp_x = max(x1, min(x2, kp_x))
+            #     kp_y = max(y1, min(y2, kp_y))
+            #     warnings_list.append(f"行 {line_num}: 关键点不在框内，已截断")
             
             keypoints.append(Keypoint(x=kp_x, y=kp_y, vis=kp_vis))
     
