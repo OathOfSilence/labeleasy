@@ -15,7 +15,7 @@ from .models import Template
 class ConfigDialog(QDialog):
     def __init__(self, parent=None, recent_projects: List[Dict] = None):
         super().__init__(parent)
-        self.setWindowTitle("Lableasy - 项目配置")
+        self.setWindowTitle("Labeleasy - 项目配置")
         self.setMinimumWidth(600)
         self.recent_projects = recent_projects if recent_projects else []
         self.template_data: Optional[Template] = None
