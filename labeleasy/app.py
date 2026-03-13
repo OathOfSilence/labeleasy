@@ -6,15 +6,15 @@ import sys
 from typing import List, Optional
 from copy import deepcopy
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QListWidget, QListWidgetItem, QSplitter, QFrame,
     QStatusBar, QToolBar, QAction, QMessageBox, QFileDialog,
     QShortcut, QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
     QDialogButtonBox
 )
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QKeySequence, QCursor, QIcon
+from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QKeySequence, QCursor, QIcon
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
@@ -358,7 +358,7 @@ class MainWindow(QMainWindow):
     def show_config_dialog(self) -> bool:
         recent_projects = self.config_manager.get_recent_projects()
         dialog = ConfigDialog(self, recent_projects)
-        if dialog.exec_() != ConfigDialog.Accepted:
+        if dialog.exec() != ConfigDialog.Accepted:
             return False
         
         config = dialog.get_config()
@@ -403,7 +403,7 @@ class MainWindow(QMainWindow):
         
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec_() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:
@@ -514,7 +514,7 @@ class MainWindow(QMainWindow):
                 kp_name = self.template.keypoints[kp_idx]
                 current_vis = self.annotations[ann_idx].keypoints[kp_idx].vis if kp_idx < len(self.annotations[ann_idx].keypoints) else 2
                 dialog = KeypointVisDialog(kp_name, current_vis, self)
-                if dialog.exec_() == QDialog.Accepted:
+                if dialog.exec() == QDialog.Accepted:
                     self.canvas.set_keypoint_vis(kp_idx, dialog.selected_vis)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -524,7 +524,7 @@ class MainWindow(QMainWindow):
             if self.template and len(self.template.names) > 1:
                 current_class = self.annotations[ann_idx].class_id
                 dialog = ClassSelectDialog(self.template.names, current_class, self)
-                if dialog.exec_() == QDialog.Accepted:
+                if dialog.exec() == QDialog.Accepted:
                     self.canvas.set_annotation_class(dialog.selected_class)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -559,7 +559,7 @@ class MainWindow(QMainWindow):
         
         if self.template and len(self.template.names) > 1:
             dialog = ClassSelectDialog(self.template.names, 0, self)
-            if dialog.exec_() == QDialog.Accepted:
+            if dialog.exec() == QDialog.Accepted:
                 self.canvas.set_annotation_class(dialog.selected_class)
                 self.annotations = self.canvas.annotations
         
@@ -693,7 +693,7 @@ class MainWindow(QMainWindow):
             return
         
         dialog = TemplateEditDialog(self.template, self)
-        if dialog.exec_() == TemplateEditDialog.Accepted:
+        if dialog.exec() == TemplateEditDialog.Accepted:
             self.update_keypoint_list()
             self.status_bar.showMessage("模板已更新")
     
@@ -704,7 +704,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec_() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from PyQt5.QtCore import QSettings
+from PyQt6.QtCore import QSettings
 
 
 def get_app_dir() -> Path:

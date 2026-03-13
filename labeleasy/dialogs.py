@@ -3,7 +3,7 @@
 
 from typing import Dict, List, Optional
 
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
     QLineEdit, QPushButton, QComboBox, QFrame, QMessageBox,
     QCheckBox, QDialogButtonBox
@@ -103,7 +103,7 @@ class ConfigDialog(QDialog):
             self.accept_config()
     
     def browse_template(self):
-        from PyQt5.QtWidgets import QFileDialog
+        from PyQt6.QtWidgets import QFileDialog
         filepath, _ = QFileDialog.getOpenFileName(
             self, "选择标注模板", "", "YAML文件 (*.yaml *.yml)"
         )
@@ -112,14 +112,14 @@ class ConfigDialog(QDialog):
             self._initialized_from_recent = False
     
     def browse_image_dir(self):
-        from PyQt5.QtWidgets import QFileDialog
+        from PyQt6.QtWidgets import QFileDialog
         directory = QFileDialog.getExistingDirectory(self, "选择图像目录")
         if directory:
             self.image_dir_edit.setText(directory)
             self._initialized_from_recent = False
     
     def browse_label_dir(self):
-        from PyQt5.QtWidgets import QFileDialog
+        from PyQt6.QtWidgets import QFileDialog
         directory = QFileDialog.getExistingDirectory(self, "选择标签目录")
         if directory:
             self.label_dir_edit.setText(directory)
@@ -204,7 +204,7 @@ class SaveConfirmDialog(QDialog):
         layout.addLayout(btn_layout)
     
     def keyPressEvent(self, event):
-        from PyQt5.QtCore import Qt
+        from PyQt6.QtCore import Qt
         if event.key() == Qt.Key_A:
             self.on_cancel()
         elif event.key() == Qt.Key_S:
@@ -236,7 +236,7 @@ class TemplateEditDialog(QDialog):
         self.setup_ui()
     
     def setup_ui(self):
-        from PyQt5.QtWidgets import QTextEdit
+        from PyQt6.QtWidgets import QTextEdit
         
         layout = QVBoxLayout(self)
         
