@@ -127,7 +127,7 @@ class Canvas(QWidget):
     
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         if self.image is None:
             painter.fillRect(self.rect(), QColor(50, 50, 50))
@@ -136,7 +136,7 @@ class Canvas(QWidget):
             return
         
         h, w, c = self.image.shape
-        qimg = QImage(self.image.data, w, h, 3 * w, QImage.Format_RGB888)
+        qimg = QImage(self.image.data, w, h, 3 * w, QImage.Format.Format_RGB888)
         scaled_pixmap = QPixmap.fromImage(qimg)
         
         img_rect = self.get_image_rect()

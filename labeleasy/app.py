@@ -9,12 +9,12 @@ from copy import deepcopy
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QListWidget, QListWidgetItem, QSplitter, QFrame,
-    QStatusBar, QToolBar, QAction, QMessageBox, QFileDialog,
-    QShortcut, QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
+    QStatusBar, QToolBar, QMessageBox, QFileDialog,
+    QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
     QDialogButtonBox
 )
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QKeySequence, QCursor, QIcon
+from PyQt6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
