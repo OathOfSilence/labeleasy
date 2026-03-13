@@ -260,6 +260,15 @@ class MainWindow(QMainWindow):
         prev_state = self.undo_history.pop()
         self.annotations = prev_state
         self.canvas.annotations = self.annotations
+        # 智能重置选中状态：为空时重置，否则保持选中（调整到有效范围）
+        if not self.annotations:
+            self.canvas.selected_annotation_idx = -1
+            self.canvas.selected_keypoint_idx = -1
+        else:
+            # 调整选中索引到有效范围
+            if self.canvas.selected_annotation_idx >= len(self.annotations):
+                self.canvas.selected_annotation_idx = len(self.annotations) - 1
+            self.canvas.selected_keypoint_idx = -1
         self.canvas.update()
         self.update_annotation_tree()
         
@@ -284,6 +293,15 @@ class MainWindow(QMainWindow):
         next_state = self.redo_history.pop()
         self.annotations = next_state
         self.canvas.annotations = self.annotations
+        # 智能重置选中状态：为空时重置，否则保持选中（调整到有效范围）
+        if not self.annotations:
+            self.canvas.selected_annotation_idx = -1
+            self.canvas.selected_keypoint_idx = -1
+        else:
+            # 调整选中索引到有效范围
+            if self.canvas.selected_annotation_idx >= len(self.annotations):
+                self.canvas.selected_annotation_idx = len(self.annotations) - 1
+            self.canvas.selected_keypoint_idx = -1
         self.canvas.update()
         self.update_annotation_tree()
         
