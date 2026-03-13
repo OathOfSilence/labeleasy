@@ -83,6 +83,37 @@ class Canvas(QWidget):
         self.template = template
         self.update()
     
+    def fit_to_window(self):
+        """调整缩放和偏移，使图像不超出窗口（仅限制上限，小图保持 1:1）"""
+        if self.image is None:
+            return
+        
+        h, w = self.image.shape[:2]
+        
+        view_w = self.width()
+        view_h = self.height()
+        
+        if view_w <= 0 or view_h <= 0:
+            return
+        
+        # 小图保持 1:1，大图缩小到适应窗口
+        if w <= view_w and h <= view_h:
+            # 图像比窗口小，保持 1:1
+            self.scale = 1.0
+        else:
+            # 图像比窗口大，缩小到适应
+            scale_w = view_w / w
+            scale_h = view_h / h
+            self.scale = min(scale_w, scale_h)
+        
+        # 居中显示
+        img_w = w * self.scale
+        img_h = h * self.scale
+        self.offset.setX(int((view_w - img_w) / 2))
+        self.offset.setY(int((view_h - img_h) / 2))
+        
+        self.update()
+    
     def get_keypoint_shortcut(self, kp_idx: int) -> str:
         idx = 0
         for row in KEYBOARD_LAYOUT:

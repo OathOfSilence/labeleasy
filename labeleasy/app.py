@@ -674,9 +674,8 @@ class MainWindow(QMainWindow):
         self.canvas.update()
     
     def reset_view(self):
-        self.canvas.scale = 1.0
-        self.canvas.offset = QPoint(0, 0)
-        self.canvas.update()
+        # 适应窗口大小，使图像完整显示
+        self.canvas.fit_to_window()
     
     def save_template(self):
         if not self.template:
