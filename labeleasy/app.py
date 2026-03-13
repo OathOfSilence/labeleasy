@@ -514,7 +514,7 @@ class MainWindow(QMainWindow):
                 kp_name = self.template.keypoints[kp_idx]
                 current_vis = self.annotations[ann_idx].keypoints[kp_idx].vis if kp_idx < len(self.annotations[ann_idx].keypoints) else 2
                 dialog = KeypointVisDialog(kp_name, current_vis, self)
-                if dialog.exec() == QDialog.Accepted:
+                if dialog.exec() == QDialog.DialogCode.Accepted:
                     self.canvas.set_keypoint_vis(kp_idx, dialog.selected_vis)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -524,7 +524,7 @@ class MainWindow(QMainWindow):
             if self.template and len(self.template.names) > 1:
                 current_class = self.annotations[ann_idx].class_id
                 dialog = ClassSelectDialog(self.template.names, current_class, self)
-                if dialog.exec() == QDialog.Accepted:
+                if dialog.exec() == QDialog.DialogCode.Accepted:
                     self.canvas.set_annotation_class(dialog.selected_class)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -559,7 +559,7 @@ class MainWindow(QMainWindow):
         
         if self.template and len(self.template.names) > 1:
             dialog = ClassSelectDialog(self.template.names, 0, self)
-            if dialog.exec() == QDialog.Accepted:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 self.canvas.set_annotation_class(dialog.selected_class)
                 self.annotations = self.canvas.annotations
         
