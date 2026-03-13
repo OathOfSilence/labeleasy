@@ -205,11 +205,11 @@ class SaveConfirmDialog(QDialog):
     
     def keyPressEvent(self, event):
         from PyQt6.QtCore import Qt
-        if event.key() == Qt.Key_A:
+        if event.key() == Qt.Key.Key_A:
             self.on_cancel()
-        elif event.key() == Qt.Key_S:
+        elif event.key() == Qt.Key.Key_S:
             self.on_save()
-        elif event.key() == Qt.Key_D:
+        elif event.key() == Qt.Key.Key_D:
             self.on_discard()
         else:
             super().keyPressEvent(event)

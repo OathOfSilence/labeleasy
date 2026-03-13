@@ -226,17 +226,17 @@ class MainWindow(QMainWindow):
         template_menu.addAction("编辑模板", self.edit_template)
     
     def setup_shortcuts(self):
-        QShortcut(QKeySequence(Qt.Key_Left), self, self.prev_image)
-        QShortcut(QKeySequence(Qt.Key_Right), self, self.next_image)
-        QShortcut(QKeySequence(Qt.Key_Up), self, self.start_bbox_drawing)
-        QShortcut(QKeySequence(Qt.Key_Down), self, self.start_keypoint_select_mode)
-        QShortcut(QKeySequence(Qt.Key_Escape), self, self.cancel_operation)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_S), self, self.save_current)
-        QShortcut(QKeySequence(Qt.Key_Delete), self, self.delete_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self, self.copy_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self, self.paste_to_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Z), self, self.undo)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.SHIFT + Qt.Key_Z), self, self.redo)
+        QShortcut(QKeySequence(Qt.Key.Key_Left), self, self.prev_image)
+        QShortcut(QKeySequence(Qt.Key.Key_Right), self, self.next_image)
+        QShortcut(QKeySequence(Qt.Key.Key_Up), self, self.start_bbox_drawing)
+        QShortcut(QKeySequence(Qt.Key.Key_Down), self, self.start_keypoint_select_mode)
+        QShortcut(QKeySequence(Qt.Key.Key_Escape), self, self.cancel_operation)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_S), self, self.save_current)
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self, self.delete_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_C), self, self.copy_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_V), self, self.paste_to_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_Z), self, self.undo)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.KeyboardModifier.Shift + Qt.Key.Key_Z), self, self.redo)
         
         for key, kp_id in KEYPOINT_KEY_MAP.items():
             shortcut = QShortcut(QKeySequence(key), self)

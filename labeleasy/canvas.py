@@ -60,7 +60,7 @@ class Canvas(QWidget):
         self.drag_keypoint_start_pos: Optional[QPoint] = None
         
         self.setMouseTracking(True)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMinimumSize(400, 300)
     
     def set_image(self, image_path: str):
@@ -132,7 +132,7 @@ class Canvas(QWidget):
         if self.image is None:
             painter.fillRect(self.rect(), QColor(50, 50, 50))
             painter.setPen(QColor(200, 200, 200))
-            painter.drawText(self.rect(), Qt.AlignCenter, "请打开图像")
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "请打开图像")
             return
         
         h, w, c = self.image.shape
@@ -141,7 +141,7 @@ class Canvas(QWidget):
         
         img_rect = self.get_image_rect()
         painter.drawPixmap(img_rect, scaled_pixmap.scaled(
-            img_rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            img_rect.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
         ))
         
         self.draw_annotations(painter, img_rect)
@@ -150,7 +150,7 @@ class Canvas(QWidget):
             self.draw_drawing_shape(painter, img_rect)
         
         if self.kp_select_drawing and self.kp_select_start and self.kp_select_end:
-            pen = QPen(QColor(0, 255, 255), 2, Qt.DashLine)
+            pen = QPen(QColor(0, 255, 255), 2, Qt.PenStyle.DashLine)
             painter.setPen(pen)
             painter.setBrush(QBrush(QColor(0, 255, 255, 30)))
             painter.drawRect(QRect(self.kp_select_start, self.kp_select_end))
@@ -205,7 +205,7 @@ class Canvas(QWidget):
         
         pen = QPen(color, pen_width)
         painter.setPen(pen)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(QRect(p1, p2))
         
         if is_selected:
@@ -226,7 +226,7 @@ class Canvas(QWidget):
         else:
             label = str(ann.class_id)
         
-        painter.setPen(QPen(Qt.white, 1))
+        painter.setPen(QPen(Qt.GlobalColor.white, 1))
         font = QFont()
         font.setPointSize(10)
         font.setBold(True)
@@ -306,12 +306,12 @@ class Canvas(QWidget):
                 painter.setBrush(QBrush(color))
                 radius = 5
             
-            painter.setPen(QPen(Qt.black, 1))
+            painter.setPen(QPen(Qt.GlobalColor.black, 1))
             painter.drawEllipse(pos, radius, radius)
             
             if self.template and ann_idx == self.selected_annotation_idx:
                 shortcut = self.get_keypoint_shortcut(kp_idx)
-                painter.setPen(QPen(Qt.white, 1))
+                painter.setPen(QPen(Qt.GlobalColor.white, 1))
                 font = QFont()
                 font.setPointSize(8)
                 font.setBold(True)
@@ -320,7 +320,7 @@ class Canvas(QWidget):
     
     def draw_drawing_shape(self, painter: QPainter, img_rect: QRect):
         if self.drawing_mode == 'bbox':
-            pen = QPen(QColor(0, 255, 255), 2, Qt.DashLine)
+            pen = QPen(QColor(0, 255, 255), 2, Qt.PenStyle.DashLine)
             painter.setPen(pen)
             painter.setBrush(QBrush(QColor(0, 255, 255, 50)))
             painter.drawRect(QRect(self.draw_start, self.draw_end))
@@ -353,7 +353,7 @@ class Canvas(QWidget):
         return None
     
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             img_pos = self.screen_to_img(event.x(), event.y())
             screen_pos = event.pos()
             
@@ -420,13 +420,13 @@ class Canvas(QWidget):
             corner = self.get_corner_at_pos(screen_pos, self.selected_annotation_idx)
             if corner is not None:
                 if corner in [0, 3]:
-                    self.setCursor(QCursor(Qt.SizeFDiagCursor))
+                    self.setCursor(QCursor(Qt.CursorShape.SizeFDiagCursor))
                 else:
-                    self.setCursor(QCursor(Qt.SizeBDiagCursor))
+                    self.setCursor(QCursor(Qt.CursorShape.SizeBDiagCursor))
             elif self.annotations[self.selected_annotation_idx].contains_point(img_pos[0], img_pos[1]):
-                self.setCursor(QCursor(Qt.ArrowCursor))
+                self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
             else:
-                self.setCursor(QCursor(Qt.ArrowCursor))
+                self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
     
     def drag_keypoint(self, screen_pos: QPoint):
         """拖动关键点到新位置"""
@@ -454,7 +454,7 @@ class Canvas(QWidget):
         self.update()
     
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             if self.kp_select_drawing:
                 self.kp_select_drawing = False
                 self.finish_keypoint_selection()
@@ -713,27 +713,27 @@ class Canvas(QWidget):
         self.drawing_mode = 'bbox'
         self.keypoint_select_mode = False
         self.current_keypoint_id = -1
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def start_keypoint_drawing(self, kp_id: int):
         self.drawing_mode = 'keypoint'
         self.keypoint_select_mode = False
         self.current_keypoint_id = kp_id
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def start_keypoint_select_mode(self):
         self.keypoint_select_mode = True
         self.drawing_mode = None
         self.current_keypoint_id = -1
         self.selected_keypoints_for_copy = []
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def stop_drawing(self):
         self.drawing_mode = None
         self.keypoint_select_mode = False
         self.current_keypoint_id = -1
         self.selected_keypoints_for_copy = []
-        self.setCursor(QCursor(Qt.ArrowCursor))
+        self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
     
     def delete_selected(self) -> bool:
         if self.selected_annotation_idx >= 0:
