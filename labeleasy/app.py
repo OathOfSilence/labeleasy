@@ -358,7 +358,7 @@ class MainWindow(QMainWindow):
     def show_config_dialog(self) -> bool:
         recent_projects = self.config_manager.get_recent_projects()
         dialog = ConfigDialog(self, recent_projects)
-        if dialog.exec() != ConfigDialog.Accepted:
+        if dialog.exec() != ConfigDialog.DialogCode.Accepted:
             return False
         
         config = dialog.get_config()
@@ -403,7 +403,7 @@ class MainWindow(QMainWindow):
         
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.DialogCode.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:
@@ -693,7 +693,7 @@ class MainWindow(QMainWindow):
             return
         
         dialog = TemplateEditDialog(self.template, self)
-        if dialog.exec() == TemplateEditDialog.Accepted:
+        if dialog.exec() == TemplateEditDialog.DialogCode.Accepted:
             self.update_keypoint_list()
             self.status_bar.showMessage("模板已更新")
     
@@ -704,7 +704,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.DialogCode.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:
