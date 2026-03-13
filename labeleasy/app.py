@@ -457,8 +457,8 @@ class MainWindow(QMainWindow):
             
             kp_count = sum(1 for kp in ann.keypoints if kp.vis > 0)
             item = QTreeWidgetItem([f"[{idx}] {label} ({kp_count}点)"])
-            item.setData(0, Qt.UserRole, idx)
-            item.setData(0, Qt.UserRole + 1, -1)
+            item.setData(0, Qt.ItemDataRole.UserRole, idx)
+            item.setData(0, Qt.ItemDataRole.UserRole + 1, -1)
             
             if self.template:
                 for kp_idx, kp in enumerate(ann.keypoints):
@@ -467,8 +467,8 @@ class MainWindow(QMainWindow):
                         vis_str = {0: "忽略", 1: "遮挡", 2: "可见"}.get(kp.vis, "?")
                         shortcut = self.canvas.get_keypoint_shortcut(kp_idx)
                         kp_item = QTreeWidgetItem([f"  [{shortcut}] {kp_name}: {vis_str}"])
-                        kp_item.setData(0, Qt.UserRole, idx)
-                        kp_item.setData(0, Qt.UserRole + 1, kp_idx)
+                        kp_item.setData(0, Qt.ItemDataRole.UserRole, idx)
+                        kp_item.setData(0, Qt.ItemDataRole.UserRole + 1, kp_idx)
                         item.addChild(kp_item)
             
             self.annotation_tree.addTopLevelItem(item)
@@ -495,16 +495,16 @@ class MainWindow(QMainWindow):
             self.load_image(idx)
     
     def on_annotation_tree_clicked(self, item: QTreeWidgetItem):
-        ann_idx = item.data(0, Qt.UserRole)
-        kp_idx = item.data(0, Qt.UserRole + 1)
+        ann_idx = item.data(0, Qt.ItemDataRole.UserRole)
+        kp_idx = item.data(0, Qt.ItemDataRole.UserRole + 1)
         
         self.canvas.selected_annotation_idx = ann_idx
         self.canvas.selected_keypoint_idx = kp_idx if kp_idx >= 0 else -1
         self.canvas.update()
     
     def on_annotation_tree_double_clicked(self, item: QTreeWidgetItem):
-        ann_idx = item.data(0, Qt.UserRole)
-        kp_idx = item.data(0, Qt.UserRole + 1)
+        ann_idx = item.data(0, Qt.ItemDataRole.UserRole)
+        kp_idx = item.data(0, Qt.ItemDataRole.UserRole + 1)
         
         if ann_idx < 0 or ann_idx >= len(self.annotations):
             return
@@ -541,14 +541,14 @@ class MainWindow(QMainWindow):
     def on_canvas_annotation_clicked(self, idx: int):
         for i in range(self.annotation_tree.topLevelItemCount()):
             item = self.annotation_tree.topLevelItem(i)
-            if item.data(0, Qt.UserRole) == idx:
+            if item.data(0, Qt.ItemDataRole.UserRole) == idx:
                 self.annotation_tree.setCurrentItem(item)
                 break
     
     def on_canvas_keypoint_clicked(self, ann_idx: int, kp_idx: int):
         for i in range(self.annotation_tree.topLevelItemCount()):
             item = self.annotation_tree.topLevelItem(i)
-            if item.data(0, Qt.UserRole) == ann_idx:
+            if item.data(0, Qt.ItemDataRole.UserRole) == ann_idx:
                 self.annotation_tree.setCurrentItem(item)
                 break
         if self.template and kp_idx < len(self.template.keypoints):
