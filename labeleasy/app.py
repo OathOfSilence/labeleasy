@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
         
         main_layout = QHBoxLayout(central_widget)
         
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter)
         
         left_panel = QWidget()
@@ -231,12 +231,12 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(Qt.Key.Key_Up), self, self.start_bbox_drawing)
         QShortcut(QKeySequence(Qt.Key.Key_Down), self, self.start_keypoint_select_mode)
         QShortcut(QKeySequence(Qt.Key.Key_Escape), self, self.cancel_operation)
-        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_S), self, self.save_current)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_S), self, self.save_current)
         QShortcut(QKeySequence(Qt.Key.Key_Delete), self, self.delete_selected)
-        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_C), self, self.copy_selected)
-        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_V), self, self.paste_to_selected)
-        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.Key.Key_Z), self, self.undo)
-        QShortcut(QKeySequence(Qt.KeyboardModifier.Control + Qt.KeyboardModifier.Shift + Qt.Key.Key_Z), self, self.redo)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_C), self, self.copy_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_V), self, self.paste_to_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Z), self, self.undo)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier | Qt.Key.Key_Z), self, self.redo)
         
         for key, kp_id in KEYPOINT_KEY_MAP.items():
             shortcut = QShortcut(QKeySequence(key), self)
