@@ -106,11 +106,9 @@ class Canvas(QWidget):
             scale_h = view_h / h
             self.scale = min(scale_w, scale_h)
         
-        # 居中显示
-        img_w = w * self.scale
-        img_h = h * self.scale
-        self.offset.setX(int((view_w - img_w) / 2))
-        self.offset.setY(int((view_h - img_h) / 2))
+        # 重置 offset 为 0，由 get_image_rect() 负责居中
+        self.offset.setX(0)
+        self.offset.setY(0)
         
         self.update()
     
