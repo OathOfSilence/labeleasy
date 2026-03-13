@@ -260,6 +260,15 @@ class MainWindow(QMainWindow):
         prev_state = self.undo_history.pop()
         self.annotations = prev_state
         self.canvas.annotations = self.annotations
+        # 智能重置选中状态：为空时重置，否则保持选中（调整到有效范围）
+        if not self.annotations:
+            self.canvas.selected_annotation_idx = -1
+            self.canvas.selected_keypoint_idx = -1
+        else:
+            # 调整选中索引到有效范围
+            if self.canvas.selected_annotation_idx >= len(self.annotations):
+                self.canvas.selected_annotation_idx = len(self.annotations) - 1
+            self.canvas.selected_keypoint_idx = -1
         self.canvas.update()
         self.update_annotation_tree()
         
@@ -284,6 +293,15 @@ class MainWindow(QMainWindow):
         next_state = self.redo_history.pop()
         self.annotations = next_state
         self.canvas.annotations = self.annotations
+        # 智能重置选中状态：为空时重置，否则保持选中（调整到有效范围）
+        if not self.annotations:
+            self.canvas.selected_annotation_idx = -1
+            self.canvas.selected_keypoint_idx = -1
+        else:
+            # 调整选中索引到有效范围
+            if self.canvas.selected_annotation_idx >= len(self.annotations):
+                self.canvas.selected_annotation_idx = len(self.annotations) - 1
+            self.canvas.selected_keypoint_idx = -1
         self.canvas.update()
         self.update_annotation_tree()
         
@@ -330,7 +348,11 @@ class MainWindow(QMainWindow):
     def save_config(self):
         self.config_manager.set_auto_save(self.auto_save)
         if self.image_files and self.current_image_idx >= 0:
-            self.config_manager.set_last_image(self.image_files[self.current_image_idx])
+            self.config_manager.set_last_image(
+                self.image_files[self.current_image_idx],
+                self.image_dir,
+                self.label_dir
+            )
         self.config_manager.save()
     
     def show_config_dialog(self) -> bool:
@@ -365,7 +387,7 @@ class MainWindow(QMainWindow):
             self.image_list.addItem(os.path.basename(f))
         
         if self.image_files:
-            last_image = self.config_manager.get_last_image()
+            last_image = self.config_manager.get_last_image(self.image_dir, self.label_dir)
             start_idx = 0
             if last_image:
                 for i, f in enumerate(self.image_files):
@@ -440,7 +462,7 @@ class MainWindow(QMainWindow):
             
             if self.template:
                 for kp_idx, kp in enumerate(ann.keypoints):
-                    if kp.vis > 0 and kp_idx < len(self.template.keypoints):
+                    if kp_idx < len(self.template.keypoints):
                         kp_name = self.template.keypoints[kp_idx]
                         vis_str = {0: "忽略", 1: "遮挡", 2: "可见"}.get(kp.vis, "?")
                         shortcut = self.canvas.get_keypoint_shortcut(kp_idx)
@@ -652,9 +674,8 @@ class MainWindow(QMainWindow):
         self.canvas.update()
     
     def reset_view(self):
-        self.canvas.scale = 1.0
-        self.canvas.offset = QPoint(0, 0)
-        self.canvas.update()
+        # 适应窗口大小，使图像完整显示
+        self.canvas.fit_to_window()
     
     def save_template(self):
         if not self.template:

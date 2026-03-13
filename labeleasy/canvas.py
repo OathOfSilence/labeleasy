@@ -83,6 +83,35 @@ class Canvas(QWidget):
         self.template = template
         self.update()
     
+    def fit_to_window(self):
+        """调整缩放和偏移，使图像不超出窗口（仅限制上限，小图保持 1:1）"""
+        if self.image is None:
+            return
+        
+        h, w = self.image.shape[:2]
+        
+        view_w = self.width()
+        view_h = self.height()
+        
+        if view_w <= 0 or view_h <= 0:
+            return
+        
+        # 小图保持 1:1，大图缩小到适应窗口
+        if w <= view_w and h <= view_h:
+            # 图像比窗口小，保持 1:1
+            self.scale = 1.0
+        else:
+            # 图像比窗口大，缩小到适应
+            scale_w = view_w / w
+            scale_h = view_h / h
+            self.scale = min(scale_w, scale_h)
+        
+        # 重置 offset 为 0，由 get_image_rect() 负责居中
+        self.offset.setX(0)
+        self.offset.setY(0)
+        
+        self.update()
+    
     def get_keypoint_shortcut(self, kp_idx: int) -> str:
         idx = 0
         for row in KEYBOARD_LAYOUT:
@@ -384,11 +413,37 @@ class Canvas(QWidget):
     
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
+        if delta == 0:
+            return
+        
+        if self.image is None:
+            return
+        
+        # 获取鼠标位置（屏幕坐标）
+        mouse_pos = event.position().toPoint()
+        
+        # 将鼠标位置转换为图像归一化坐标（0-1）
+        img_x, img_y = self.screen_to_img(mouse_pos.x(), mouse_pos.y())
+        
+        # 应用缩放
         if delta > 0:
             self.scale *= 1.1
         else:
             self.scale /= 1.1
-        self.scale = max(0.1, min(10.0, self.scale))
+        self.scale = max(0.2, min(5.0, self.scale))  # 缩放范围：0.2x - 5.0x
+        
+        # 计算新的 offset，使鼠标位置保持对应同一个图像点
+        # 公式：offset = mouse_screen - img_normalized * (image_size * scale) - center_offset
+        h, w = self.image.shape[:2]
+        img_w = w * self.scale
+        img_h = h * self.scale
+        
+        new_offset_x = mouse_pos.x() - img_x * img_w - (self.width() - img_w) / 2
+        new_offset_y = mouse_pos.y() - img_y * img_h - (self.height() - img_h) / 2
+        
+        self.offset.setX(int(new_offset_x))
+        self.offset.setY(int(new_offset_y))
+        
         self.update()
     
     def drag_resize_bbox(self, screen_pos: QPoint):
