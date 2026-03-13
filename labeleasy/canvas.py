@@ -55,6 +55,10 @@ class Canvas(QWidget):
         self.kp_select_end: Optional[QPoint] = None
         self.kp_select_drawing = False
         
+        # 拖动关键点
+        self.dragging_keypoint_idx: Optional[int] = None
+        self.drag_keypoint_start_pos: Optional[QPoint] = None
+        
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMinimumSize(400, 300)
@@ -326,6 +330,28 @@ class Canvas(QWidget):
             painter.setBrush(QBrush(QColor(255, 0, 255, 100)))
             painter.drawEllipse(self.draw_end, 10, 10)
     
+    def get_keypoint_at_pos(self, screen_pos: QPoint) -> Optional[int]:
+        """获取鼠标位置下的关键点索引，仅在有关键点可拖动时返回"""
+        if self.selected_annotation_idx < 0:
+            return None
+        if not self.template:
+            return None
+        
+        ann = self.annotations[self.selected_annotation_idx]
+        
+        # 检查每个可见的关键点
+        for kp_idx, kp in enumerate(ann.keypoints):
+            if kp.vis == 0:
+                continue
+            kp_screen = self.img_to_screen(kp.x, kp.y)
+            # 检测鼠标是否在关键点附近（10 像素范围）
+            dx = screen_pos.x() - kp_screen.x()
+            dy = screen_pos.y() - kp_screen.y()
+            if dx * dx + dy * dy <= 100:  # 10^2 = 100
+                return kp_idx
+        
+        return None
+    
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             img_pos = self.screen_to_img(event.x(), event.y())
@@ -342,9 +368,19 @@ class Canvas(QWidget):
                 self.draw_start = event.pos()
                 self.draw_end = event.pos()
             elif self.drawing_mode == 'keypoint' and self.current_keypoint_id >= 0:
+                # 绘制模式下只绘制新关键点，不支持拖动（防误操作）
                 self.request_save_undo.emit()
                 self.add_keypoint_at(img_pos[0], img_pos[1])
             else:
+                # 普通模式：检查是否点击在已存在的关键点上（拖动模式）
+                kp_idx = self.get_keypoint_at_pos(screen_pos)
+                if kp_idx is not None:
+                    # 拖动现有关键点
+                    self.dragging_keypoint_idx = kp_idx
+                    self.drag_keypoint_start_pos = screen_pos
+                    self.request_save_undo.emit()
+                    return
+                
                 if self.selected_annotation_idx >= 0:
                     corner = self.get_corner_at_pos(screen_pos, self.selected_annotation_idx)
                     if corner is not None:
@@ -363,6 +399,11 @@ class Canvas(QWidget):
         if self.kp_select_drawing:
             self.kp_select_end = screen_pos
             self.update()
+            return
+        
+        # 拖动关键点
+        if self.dragging_keypoint_idx is not None and self.drag_keypoint_start_pos is not None:
+            self.drag_keypoint(screen_pos)
             return
         
         if self.dragging_corner is not None and self.drag_start_ann is not None:
@@ -387,6 +428,31 @@ class Canvas(QWidget):
             else:
                 self.setCursor(QCursor(Qt.ArrowCursor))
     
+    def drag_keypoint(self, screen_pos: QPoint):
+        """拖动关键点到新位置"""
+        if self.dragging_keypoint_idx is None:
+            return
+        if self.selected_annotation_idx < 0:
+            return
+        
+        ann = self.annotations[self.selected_annotation_idx]
+        if self.dragging_keypoint_idx >= len(ann.keypoints):
+            return
+        
+        # 计算新位置（图像归一化坐标）
+        img_x, img_y = self.screen_to_img(screen_pos.x(), screen_pos.y())
+        
+        # 限制在 [0, 1] 范围内
+        img_x = max(0, min(1, img_x))
+        img_y = max(0, min(1, img_y))
+        
+        # 更新关键点位置
+        ann.keypoints[self.dragging_keypoint_idx].x = img_x
+        ann.keypoints[self.dragging_keypoint_idx].y = img_y
+        ann.keypoints[self.dragging_keypoint_idx].vis = 2
+        
+        self.update()
+    
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             if self.kp_select_drawing:
@@ -394,6 +460,13 @@ class Canvas(QWidget):
                 self.finish_keypoint_selection()
                 self.kp_select_start = None
                 self.kp_select_end = None
+                return
+            
+            # 释放拖动关键点
+            if self.dragging_keypoint_idx is not None:
+                self.dragging_keypoint_idx = None
+                self.drag_keypoint_start_pos = None
+                self.annotation_modified.emit()
                 return
             
             if self.dragging_corner is not None:
