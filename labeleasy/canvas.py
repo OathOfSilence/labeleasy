@@ -354,8 +354,8 @@ class Canvas(QWidget):
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            img_pos = self.screen_to_img(event.x(), event.y())
-            screen_pos = event.pos()
+            img_pos = self.screen_to_img(event.position().x(), event.position().y())
+            screen_pos = event.position().toPoint()
             
             if self.keypoint_select_mode and self.selected_annotation_idx >= 0:
                 self.kp_select_drawing = True
@@ -365,8 +365,8 @@ class Canvas(QWidget):
             
             if self.drawing_mode == 'bbox':
                 self.drawing = True
-                self.draw_start = event.pos()
-                self.draw_end = event.pos()
+                self.draw_start = event.position().toPoint()
+                self.draw_end = event.position().toPoint()
             elif self.drawing_mode == 'keypoint' and self.current_keypoint_id >= 0:
                 # 绘制模式下只绘制新关键点，不支持拖动（防误操作）
                 self.request_save_undo.emit()
@@ -393,8 +393,8 @@ class Canvas(QWidget):
                 self.handle_click(screen_pos, img_pos)
     
     def mouseMoveEvent(self, event):
-        img_pos = self.screen_to_img(event.x(), event.y())
-        screen_pos = event.pos()
+        img_pos = self.screen_to_img(event.position().x(), event.position().y())
+        screen_pos = event.position().toPoint()
         
         if self.kp_select_drawing:
             self.kp_select_end = screen_pos
@@ -413,7 +413,7 @@ class Canvas(QWidget):
         self.update_hover(screen_pos, img_pos)
         
         if self.drawing and self.draw_start:
-            self.draw_end = event.pos()
+            self.draw_end = event.position().toPoint()
             self.update()
         
         if self.selected_annotation_idx >= 0:
