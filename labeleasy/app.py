@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QTextEdit, QFormLayout, QApplication
 )
 from PySide6.QtCore import Qt, QPoint, QUrl
-from PySide6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices
+from PySide6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices, QPixmap
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
