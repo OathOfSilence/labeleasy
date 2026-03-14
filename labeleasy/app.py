@@ -47,7 +47,7 @@ class ClassSelectDialog(QDialog):
             self.class_combo.setCurrentIndex(current_class)
         layout.addWidget(self.class_combo)
         
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
         layout.addWidget(btn_box)
@@ -76,7 +76,7 @@ class KeypointVisDialog(QDialog):
         self.vis_combo.setCurrentIndex(current_vis)
         layout.addWidget(self.vis_combo)
         
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
         layout.addWidget(btn_box)
