@@ -6,15 +6,15 @@ import sys
 from typing import List, Optional
 from copy import deepcopy
 
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QListWidget, QListWidgetItem, QSplitter, QFrame,
-    QStatusBar, QToolBar, QAction, QMessageBox, QFileDialog,
-    QShortcut, QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
-    QDialogButtonBox
+    QStatusBar, QToolBar, QMessageBox, QFileDialog,
+    QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
+    QDialogButtonBox, QTextEdit, QFormLayout, QApplication
 )
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QKeySequence, QCursor, QIcon
+from PySide6.QtCore import Qt, QPoint, QUrl
+from PySide6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices, QPixmap
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
@@ -47,7 +47,7 @@ class ClassSelectDialog(QDialog):
             self.class_combo.setCurrentIndex(current_class)
         layout.addWidget(self.class_combo)
         
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
         layout.addWidget(btn_box)
@@ -76,7 +76,7 @@ class KeypointVisDialog(QDialog):
         self.vis_combo.setCurrentIndex(current_vis)
         layout.addWidget(self.vis_combo)
         
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
         layout.addWidget(btn_box)
@@ -84,6 +84,108 @@ class KeypointVisDialog(QDialog):
     def accept(self):
         self.selected_vis = self.vis_combo.currentData()
         super().accept()
+
+
+class AboutDialog(QDialog):
+    """关于对话框"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("关于 labeleasy")
+        self.setMinimumWidth(500)
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        
+        # Logo 和标题
+        logo_layout = QHBoxLayout()
+        logo_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 加载软件图标
+        icon_path = get_resource_path("labeleasy/icon.ico")
+        if icon_path.exists():
+            logo_label = QLabel()
+            pixmap = QPixmap(str(icon_path)).scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(pixmap)
+            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo_layout.addWidget(logo_label)
+        
+        layout.addLayout(logo_layout)
+        
+        # 标题
+        title_label = QLabel("labeleasy")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("font-size: 28px; font-weight: bold;")
+        layout.addWidget(title_label)
+        
+        # 简介
+        intro_text = QLabel("YOLO 格式图像标注应用\n支持边界框和关键点标注")
+        intro_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        intro_text.setWordWrap(True)
+        intro_text.setStyleSheet("font-size: 14px; color: #666;")
+        layout.addWidget(intro_text)
+        
+        # 分隔线
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+        
+        # 信息表单
+        info_layout = QFormLayout()
+        info_layout.setSpacing(12)
+        info_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        
+        # PySide6 信息
+        qt_label = QLabel("PySide6 (Qt for Python)")
+        info_layout.addRow("界面框架:", qt_label)
+        
+        # 仓库位置
+        repo_label = QLabel("GitHub")
+        repo_btn = QPushButton("访问仓库")
+        repo_btn.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl("https://github.com/OathOfSilence/labeleasy")
+        ))
+        repo_widget = QWidget()
+        repo_layout = QHBoxLayout(repo_widget)
+        repo_layout.setContentsMargins(0, 0, 0, 0)
+        repo_layout.addWidget(repo_label)
+        repo_layout.addWidget(repo_btn)
+        info_layout.addRow("代码仓库:", repo_widget)
+        
+        # 作者信息
+        author_label = QLabel("OathOfSilence")
+        author_btn = QPushButton("访问主页")
+        author_btn.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl("https://github.com/OathOfSilence")
+        ))
+        author_widget = QWidget()
+        author_layout = QHBoxLayout(author_widget)
+        author_layout.setContentsMargins(0, 0, 0, 0)
+        author_layout.addWidget(author_label)
+        author_layout.addWidget(author_btn)
+        info_layout.addRow("作者:", author_widget)
+        
+        layout.addLayout(info_layout)
+        
+        # 分隔线
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.Shape.HLine)
+        line2.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line2)
+        
+        # 许可证
+        license_label = QLabel("Apache License 2.0")
+        license_label.setStyleSheet("color: #666; font-size: 12px;")
+        layout.addWidget(license_label)
+        
+        # 关闭按钮
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
 
 
 class MainWindow(QMainWindow):
@@ -125,7 +227,7 @@ class MainWindow(QMainWindow):
         
         main_layout = QHBoxLayout(central_widget)
         
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter)
         
         left_panel = QWidget()
@@ -224,19 +326,25 @@ class MainWindow(QMainWindow):
         template_menu = menubar.addMenu("模板")
         template_menu.addAction("保存当前模板", self.save_template)
         template_menu.addAction("编辑模板", self.edit_template)
+        
+        help_menu = menubar.addMenu("帮助")
+        help_menu.addAction("使用手册", self.open_manual)
+        help_menu.addAction("报告缺陷", self.report_issue)
+        help_menu.addSeparator()
+        help_menu.addAction("关于 labeleasy", self.show_about)
     
     def setup_shortcuts(self):
-        QShortcut(QKeySequence(Qt.Key_Left), self, self.prev_image)
-        QShortcut(QKeySequence(Qt.Key_Right), self, self.next_image)
-        QShortcut(QKeySequence(Qt.Key_Up), self, self.start_bbox_drawing)
-        QShortcut(QKeySequence(Qt.Key_Down), self, self.start_keypoint_select_mode)
-        QShortcut(QKeySequence(Qt.Key_Escape), self, self.cancel_operation)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_S), self, self.save_current)
-        QShortcut(QKeySequence(Qt.Key_Delete), self, self.delete_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self, self.copy_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_V), self, self.paste_to_selected)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Z), self, self.undo)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.SHIFT + Qt.Key_Z), self, self.redo)
+        QShortcut(QKeySequence(Qt.Key.Key_Left), self, self.prev_image)
+        QShortcut(QKeySequence(Qt.Key.Key_Right), self, self.next_image)
+        QShortcut(QKeySequence(Qt.Key.Key_Up), self, self.start_bbox_drawing)
+        QShortcut(QKeySequence(Qt.Key.Key_Down), self, self.start_keypoint_select_mode)
+        QShortcut(QKeySequence(Qt.Key.Key_Escape), self, self.cancel_operation)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_S), self, self.save_current)
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self, self.delete_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_C), self, self.copy_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_V), self, self.paste_to_selected)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Z), self, self.undo)
+        QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier | Qt.Key.Key_Z), self, self.redo)
         
         for key, kp_id in KEYPOINT_KEY_MAP.items():
             shortcut = QShortcut(QKeySequence(key), self)
@@ -358,7 +466,7 @@ class MainWindow(QMainWindow):
     def show_config_dialog(self) -> bool:
         recent_projects = self.config_manager.get_recent_projects()
         dialog = ConfigDialog(self, recent_projects)
-        if dialog.exec_() != ConfigDialog.Accepted:
+        if dialog.exec() != ConfigDialog.DialogCode.Accepted:
             return False
         
         config = dialog.get_config()
@@ -403,7 +511,7 @@ class MainWindow(QMainWindow):
         
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec_() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.DialogCode.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:
@@ -457,8 +565,8 @@ class MainWindow(QMainWindow):
             
             kp_count = sum(1 for kp in ann.keypoints if kp.vis > 0)
             item = QTreeWidgetItem([f"[{idx}] {label} ({kp_count}点)"])
-            item.setData(0, Qt.UserRole, idx)
-            item.setData(0, Qt.UserRole + 1, -1)
+            item.setData(0, Qt.ItemDataRole.UserRole, idx)
+            item.setData(0, Qt.ItemDataRole.UserRole + 1, -1)
             
             if self.template:
                 for kp_idx, kp in enumerate(ann.keypoints):
@@ -467,8 +575,8 @@ class MainWindow(QMainWindow):
                         vis_str = {0: "忽略", 1: "遮挡", 2: "可见"}.get(kp.vis, "?")
                         shortcut = self.canvas.get_keypoint_shortcut(kp_idx)
                         kp_item = QTreeWidgetItem([f"  [{shortcut}] {kp_name}: {vis_str}"])
-                        kp_item.setData(0, Qt.UserRole, idx)
-                        kp_item.setData(0, Qt.UserRole + 1, kp_idx)
+                        kp_item.setData(0, Qt.ItemDataRole.UserRole, idx)
+                        kp_item.setData(0, Qt.ItemDataRole.UserRole + 1, kp_idx)
                         item.addChild(kp_item)
             
             self.annotation_tree.addTopLevelItem(item)
@@ -495,16 +603,16 @@ class MainWindow(QMainWindow):
             self.load_image(idx)
     
     def on_annotation_tree_clicked(self, item: QTreeWidgetItem):
-        ann_idx = item.data(0, Qt.UserRole)
-        kp_idx = item.data(0, Qt.UserRole + 1)
+        ann_idx = item.data(0, Qt.ItemDataRole.UserRole)
+        kp_idx = item.data(0, Qt.ItemDataRole.UserRole + 1)
         
         self.canvas.selected_annotation_idx = ann_idx
         self.canvas.selected_keypoint_idx = kp_idx if kp_idx >= 0 else -1
         self.canvas.update()
     
     def on_annotation_tree_double_clicked(self, item: QTreeWidgetItem):
-        ann_idx = item.data(0, Qt.UserRole)
-        kp_idx = item.data(0, Qt.UserRole + 1)
+        ann_idx = item.data(0, Qt.ItemDataRole.UserRole)
+        kp_idx = item.data(0, Qt.ItemDataRole.UserRole + 1)
         
         if ann_idx < 0 or ann_idx >= len(self.annotations):
             return
@@ -514,7 +622,7 @@ class MainWindow(QMainWindow):
                 kp_name = self.template.keypoints[kp_idx]
                 current_vis = self.annotations[ann_idx].keypoints[kp_idx].vis if kp_idx < len(self.annotations[ann_idx].keypoints) else 2
                 dialog = KeypointVisDialog(kp_name, current_vis, self)
-                if dialog.exec_() == QDialog.Accepted:
+                if dialog.exec() == QDialog.DialogCode.Accepted:
                     self.canvas.set_keypoint_vis(kp_idx, dialog.selected_vis)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -524,7 +632,7 @@ class MainWindow(QMainWindow):
             if self.template and len(self.template.names) > 1:
                 current_class = self.annotations[ann_idx].class_id
                 dialog = ClassSelectDialog(self.template.names, current_class, self)
-                if dialog.exec_() == QDialog.Accepted:
+                if dialog.exec() == QDialog.DialogCode.Accepted:
                     self.canvas.set_annotation_class(dialog.selected_class)
                     self.annotations = self.canvas.annotations
                     self.update_annotation_tree()
@@ -541,14 +649,14 @@ class MainWindow(QMainWindow):
     def on_canvas_annotation_clicked(self, idx: int):
         for i in range(self.annotation_tree.topLevelItemCount()):
             item = self.annotation_tree.topLevelItem(i)
-            if item.data(0, Qt.UserRole) == idx:
+            if item.data(0, Qt.ItemDataRole.UserRole) == idx:
                 self.annotation_tree.setCurrentItem(item)
                 break
     
     def on_canvas_keypoint_clicked(self, ann_idx: int, kp_idx: int):
         for i in range(self.annotation_tree.topLevelItemCount()):
             item = self.annotation_tree.topLevelItem(i)
-            if item.data(0, Qt.UserRole) == ann_idx:
+            if item.data(0, Qt.ItemDataRole.UserRole) == ann_idx:
                 self.annotation_tree.setCurrentItem(item)
                 break
         if self.template and kp_idx < len(self.template.keypoints):
@@ -559,7 +667,7 @@ class MainWindow(QMainWindow):
         
         if self.template and len(self.template.names) > 1:
             dialog = ClassSelectDialog(self.template.names, 0, self)
-            if dialog.exec_() == QDialog.Accepted:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 self.canvas.set_annotation_class(dialog.selected_class)
                 self.annotations = self.canvas.annotations
         
@@ -693,9 +801,24 @@ class MainWindow(QMainWindow):
             return
         
         dialog = TemplateEditDialog(self.template, self)
-        if dialog.exec_() == TemplateEditDialog.Accepted:
+        if dialog.exec() == TemplateEditDialog.DialogCode.Accepted:
             self.update_keypoint_list()
             self.status_bar.showMessage("模板已更新")
+    
+    def open_manual(self):
+        """打开使用手册 - GitHub README"""
+        QDesktopServices.openUrl(QUrl("https://github.com/OathOfSilence/labeleasy/blob/main/README.md"))
+        self.status_bar.showMessage("正在打开使用手册...")
+    
+    def report_issue(self):
+        """打开报告缺陷页面 - GitHub Issues"""
+        QDesktopServices.openUrl(QUrl("https://github.com/OathOfSilence/labeleasy/issues"))
+        self.status_bar.showMessage("正在打开问题反馈页面...")
+    
+    def show_about(self):
+        """显示关于对话框"""
+        dialog = AboutDialog(self)
+        dialog.exec()
     
     def open_project(self):
         if self.show_config_dialog():
@@ -704,7 +827,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if self.modified and not self.auto_save:
             dialog = SaveConfirmDialog(self)
-            if dialog.exec_() == SaveConfirmDialog.Accepted:
+            if dialog.exec() == SaveConfirmDialog.DialogCode.Accepted:
                 if dialog.result_code == 1:
                     self.save_current()
                 elif dialog.result_code == 0:

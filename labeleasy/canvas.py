@@ -4,9 +4,9 @@
 from typing import List, Tuple, Optional
 from copy import deepcopy
 
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import Qt, QPoint, QRect, pyqtSignal
-from PyQt5.QtGui import (
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Qt, QPoint, QRect, Signal
+from PySide6.QtGui import (
     QPainter, QColor, QPen, QBrush, QFont, QPixmap, QImage,
     QCursor
 )
@@ -18,11 +18,11 @@ from .constants import SKELETON_COLORS, KEYBOARD_LAYOUT
 
 
 class Canvas(QWidget):
-    annotation_clicked = pyqtSignal(int)
-    keypoint_clicked = pyqtSignal(int, int)
-    annotation_added = pyqtSignal()
-    annotation_modified = pyqtSignal()
-    request_save_undo = pyqtSignal()
+    annotation_clicked = Signal(int)
+    keypoint_clicked = Signal(int, int)
+    annotation_added = Signal()
+    annotation_modified = Signal()
+    request_save_undo = Signal()
     
     CORNER_SIZE = 8
     
@@ -55,8 +55,12 @@ class Canvas(QWidget):
         self.kp_select_end: Optional[QPoint] = None
         self.kp_select_drawing = False
         
+        # 拖动关键点
+        self.dragging_keypoint_idx: Optional[int] = None
+        self.drag_keypoint_start_pos: Optional[QPoint] = None
+        
         self.setMouseTracking(True)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMinimumSize(400, 300)
     
     def set_image(self, image_path: str):
@@ -123,21 +127,21 @@ class Canvas(QWidget):
     
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         if self.image is None:
             painter.fillRect(self.rect(), QColor(50, 50, 50))
             painter.setPen(QColor(200, 200, 200))
-            painter.drawText(self.rect(), Qt.AlignCenter, "请打开图像")
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "请打开图像")
             return
         
         h, w, c = self.image.shape
-        qimg = QImage(self.image.data, w, h, 3 * w, QImage.Format_RGB888)
+        qimg = QImage(self.image.data, w, h, 3 * w, QImage.Format.Format_RGB888)
         scaled_pixmap = QPixmap.fromImage(qimg)
         
         img_rect = self.get_image_rect()
         painter.drawPixmap(img_rect, scaled_pixmap.scaled(
-            img_rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            img_rect.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
         ))
         
         self.draw_annotations(painter, img_rect)
@@ -146,7 +150,7 @@ class Canvas(QWidget):
             self.draw_drawing_shape(painter, img_rect)
         
         if self.kp_select_drawing and self.kp_select_start and self.kp_select_end:
-            pen = QPen(QColor(0, 255, 255), 2, Qt.DashLine)
+            pen = QPen(QColor(0, 255, 255), 2, Qt.PenStyle.DashLine)
             painter.setPen(pen)
             painter.setBrush(QBrush(QColor(0, 255, 255, 30)))
             painter.drawRect(QRect(self.kp_select_start, self.kp_select_end))
@@ -201,7 +205,7 @@ class Canvas(QWidget):
         
         pen = QPen(color, pen_width)
         painter.setPen(pen)
-        painter.setBrush(Qt.NoBrush)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(QRect(p1, p2))
         
         if is_selected:
@@ -222,7 +226,7 @@ class Canvas(QWidget):
         else:
             label = str(ann.class_id)
         
-        painter.setPen(QPen(Qt.white, 1))
+        painter.setPen(QPen(Qt.GlobalColor.white, 1))
         font = QFont()
         font.setPointSize(10)
         font.setBold(True)
@@ -302,12 +306,12 @@ class Canvas(QWidget):
                 painter.setBrush(QBrush(color))
                 radius = 5
             
-            painter.setPen(QPen(Qt.black, 1))
+            painter.setPen(QPen(Qt.GlobalColor.black, 1))
             painter.drawEllipse(pos, radius, radius)
             
             if self.template and ann_idx == self.selected_annotation_idx:
                 shortcut = self.get_keypoint_shortcut(kp_idx)
-                painter.setPen(QPen(Qt.white, 1))
+                painter.setPen(QPen(Qt.GlobalColor.white, 1))
                 font = QFont()
                 font.setPointSize(8)
                 font.setBold(True)
@@ -316,7 +320,7 @@ class Canvas(QWidget):
     
     def draw_drawing_shape(self, painter: QPainter, img_rect: QRect):
         if self.drawing_mode == 'bbox':
-            pen = QPen(QColor(0, 255, 255), 2, Qt.DashLine)
+            pen = QPen(QColor(0, 255, 255), 2, Qt.PenStyle.DashLine)
             painter.setPen(pen)
             painter.setBrush(QBrush(QColor(0, 255, 255, 50)))
             painter.drawRect(QRect(self.draw_start, self.draw_end))
@@ -326,10 +330,32 @@ class Canvas(QWidget):
             painter.setBrush(QBrush(QColor(255, 0, 255, 100)))
             painter.drawEllipse(self.draw_end, 10, 10)
     
+    def get_keypoint_at_pos(self, screen_pos: QPoint) -> Optional[int]:
+        """获取鼠标位置下的关键点索引，仅在有关键点可拖动时返回"""
+        if self.selected_annotation_idx < 0:
+            return None
+        if not self.template:
+            return None
+        
+        ann = self.annotations[self.selected_annotation_idx]
+        
+        # 检查每个可见的关键点
+        for kp_idx, kp in enumerate(ann.keypoints):
+            if kp.vis == 0:
+                continue
+            kp_screen = self.img_to_screen(kp.x, kp.y)
+            # 检测鼠标是否在关键点附近（10 像素范围）
+            dx = screen_pos.x() - kp_screen.x()
+            dy = screen_pos.y() - kp_screen.y()
+            if dx * dx + dy * dy <= 100:  # 10^2 = 100
+                return kp_idx
+        
+        return None
+    
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            img_pos = self.screen_to_img(event.x(), event.y())
-            screen_pos = event.pos()
+        if event.button() == Qt.MouseButton.LeftButton:
+            img_pos = self.screen_to_img(event.position().x(), event.position().y())
+            screen_pos = event.position().toPoint()
             
             if self.keypoint_select_mode and self.selected_annotation_idx >= 0:
                 self.kp_select_drawing = True
@@ -339,12 +365,22 @@ class Canvas(QWidget):
             
             if self.drawing_mode == 'bbox':
                 self.drawing = True
-                self.draw_start = event.pos()
-                self.draw_end = event.pos()
+                self.draw_start = event.position().toPoint()
+                self.draw_end = event.position().toPoint()
             elif self.drawing_mode == 'keypoint' and self.current_keypoint_id >= 0:
+                # 绘制模式下只绘制新关键点，不支持拖动（防误操作）
                 self.request_save_undo.emit()
                 self.add_keypoint_at(img_pos[0], img_pos[1])
             else:
+                # 普通模式：检查是否点击在已存在的关键点上（拖动模式）
+                kp_idx = self.get_keypoint_at_pos(screen_pos)
+                if kp_idx is not None:
+                    # 拖动现有关键点
+                    self.dragging_keypoint_idx = kp_idx
+                    self.drag_keypoint_start_pos = screen_pos
+                    self.request_save_undo.emit()
+                    return
+                
                 if self.selected_annotation_idx >= 0:
                     corner = self.get_corner_at_pos(screen_pos, self.selected_annotation_idx)
                     if corner is not None:
@@ -357,12 +393,17 @@ class Canvas(QWidget):
                 self.handle_click(screen_pos, img_pos)
     
     def mouseMoveEvent(self, event):
-        img_pos = self.screen_to_img(event.x(), event.y())
-        screen_pos = event.pos()
+        img_pos = self.screen_to_img(event.position().x(), event.position().y())
+        screen_pos = event.position().toPoint()
         
         if self.kp_select_drawing:
             self.kp_select_end = screen_pos
             self.update()
+            return
+        
+        # 拖动关键点
+        if self.dragging_keypoint_idx is not None and self.drag_keypoint_start_pos is not None:
+            self.drag_keypoint(screen_pos)
             return
         
         if self.dragging_corner is not None and self.drag_start_ann is not None:
@@ -372,28 +413,60 @@ class Canvas(QWidget):
         self.update_hover(screen_pos, img_pos)
         
         if self.drawing and self.draw_start:
-            self.draw_end = event.pos()
+            self.draw_end = event.position().toPoint()
             self.update()
         
         if self.selected_annotation_idx >= 0:
             corner = self.get_corner_at_pos(screen_pos, self.selected_annotation_idx)
             if corner is not None:
                 if corner in [0, 3]:
-                    self.setCursor(QCursor(Qt.SizeFDiagCursor))
+                    self.setCursor(QCursor(Qt.CursorShape.SizeFDiagCursor))
                 else:
-                    self.setCursor(QCursor(Qt.SizeBDiagCursor))
+                    self.setCursor(QCursor(Qt.CursorShape.SizeBDiagCursor))
             elif self.annotations[self.selected_annotation_idx].contains_point(img_pos[0], img_pos[1]):
-                self.setCursor(QCursor(Qt.ArrowCursor))
+                self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
             else:
-                self.setCursor(QCursor(Qt.ArrowCursor))
+                self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+    
+    def drag_keypoint(self, screen_pos: QPoint):
+        """拖动关键点到新位置"""
+        if self.dragging_keypoint_idx is None:
+            return
+        if self.selected_annotation_idx < 0:
+            return
+        
+        ann = self.annotations[self.selected_annotation_idx]
+        if self.dragging_keypoint_idx >= len(ann.keypoints):
+            return
+        
+        # 计算新位置（图像归一化坐标）
+        img_x, img_y = self.screen_to_img(screen_pos.x(), screen_pos.y())
+        
+        # 限制在 [0, 1] 范围内
+        img_x = max(0, min(1, img_x))
+        img_y = max(0, min(1, img_y))
+        
+        # 更新关键点位置
+        ann.keypoints[self.dragging_keypoint_idx].x = img_x
+        ann.keypoints[self.dragging_keypoint_idx].y = img_y
+        ann.keypoints[self.dragging_keypoint_idx].vis = 2
+        
+        self.update()
     
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             if self.kp_select_drawing:
                 self.kp_select_drawing = False
                 self.finish_keypoint_selection()
                 self.kp_select_start = None
                 self.kp_select_end = None
+                return
+            
+            # 释放拖动关键点
+            if self.dragging_keypoint_idx is not None:
+                self.dragging_keypoint_idx = None
+                self.drag_keypoint_start_pos = None
+                self.annotation_modified.emit()
                 return
             
             if self.dragging_corner is not None:
@@ -640,27 +713,27 @@ class Canvas(QWidget):
         self.drawing_mode = 'bbox'
         self.keypoint_select_mode = False
         self.current_keypoint_id = -1
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def start_keypoint_drawing(self, kp_id: int):
         self.drawing_mode = 'keypoint'
         self.keypoint_select_mode = False
         self.current_keypoint_id = kp_id
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def start_keypoint_select_mode(self):
         self.keypoint_select_mode = True
         self.drawing_mode = None
         self.current_keypoint_id = -1
         self.selected_keypoints_for_copy = []
-        self.setCursor(QCursor(Qt.CrossCursor))
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def stop_drawing(self):
         self.drawing_mode = None
         self.keypoint_select_mode = False
         self.current_keypoint_id = -1
         self.selected_keypoints_for_copy = []
-        self.setCursor(QCursor(Qt.ArrowCursor))
+        self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
     
     def delete_selected(self) -> bool:
         if self.selected_annotation_idx >= 0:
