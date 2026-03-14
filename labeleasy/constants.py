@@ -2,8 +2,8 @@
 """常量定义"""
 
 from pathlib import Path
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 
 CONFIG_FILE = Path.home() / '.labeleasy' / 'config.json'
 MAX_RECENT_PROJECTS = 20

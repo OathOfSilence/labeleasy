@@ -4,9 +4,9 @@
 from typing import List, Tuple, Optional
 from copy import deepcopy
 
-from PyQt6.QtWidgets import QWidget
-from PyQt6.QtCore import Qt, QPoint, QRect, pyqtSignal
-from PyQt6.QtGui import (
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Qt, QPoint, QRect, pyqtSignal
+from PySide6.QtGui import (
     QPainter, QColor, QPen, QBrush, QFont, QPixmap, QImage,
     QCursor
 )

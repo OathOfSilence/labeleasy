@@ -6,15 +6,15 @@ import sys
 from typing import List, Optional
 from copy import deepcopy
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QListWidget, QListWidgetItem, QSplitter, QFrame,
     QStatusBar, QToolBar, QMessageBox, QFileDialog,
     QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
     QDialogButtonBox, QTextEdit, QFormLayout, QApplication
 )
-from PyQt6.QtCore import Qt, QPoint, QUrl
-from PyQt6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices
+from PySide6.QtCore import Qt, QPoint, QUrl
+from PySide6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
@@ -128,8 +128,8 @@ class AboutDialog(QDialog):
         version_label.setStyleSheet("font-weight: bold;")
         info_layout.addRow("版本:", version_label)
         
-        # PyQt6 信息
-        qt_label = QLabel("PyQt6")
+        # PySide6 信息
+        qt_label = QLabel("PySide6")
         info_layout.addRow("界面框架:", qt_label)
         
         # 仓库位置
