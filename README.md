@@ -1,12 +1,22 @@
 # labeleasy
 
-YOLO格式图像标注应用，支持边界框和关键点标注。
+YOLO 格式图像标注应用，支持边界框和关键点标注。
+
+## 版本
+
+**当前版本**: v2.0.0
+
+### v2.0.0 新增 (PyQt6)
+
+- 🎨 **拖动调整关键点位置** - 选中关键点后可直接拖动微调位置
+- 🚀 **PyQt6 支持** - 全面迁移至 PyQt6，更好的性能和兼容性
 
 ## 功能特性
 
-- 支持YOLO格式标注文件读写
-- 边界框(BBox)绘制与调整
+- 支持 YOLO 格式标注文件读写
+- 边界框 (BBox) 绘制与调整
 - 关键点标注（键盘快捷键映射）
+- **关键点拖动微调** (v2.0.0 新增)
 - 骨架连线显示
 - 多类别目标支持
 - 自动保存功能
@@ -40,7 +50,7 @@ labeleasy/
 ### 安装依赖
 
 ```bash
-# 创建conda环境
+# 创建 conda 环境
 conda create -n labeleasy python=3.9
 conda activate labeleasy
 
@@ -51,10 +61,10 @@ pip install -r requirements.txt
 ### 运行应用
 
 ```bash
-# 方式1: 模块方式运行
+# 方式 1: 模块方式运行
 python -m labeleasy
 
-# 方式2: 直接运行入口
+# 方式 2: 直接运行入口
 python labeleasy/__main__.py
 ```
 
@@ -78,10 +88,11 @@ python labeleasy/__main__.py
 
 #### 标注流程
 
-1. 启动应用后选择模板文件(YAML格式)、图像目录、标签目录
+1. 启动应用后选择模板文件 (YAML 格式)、图像目录、标签目录
 2. 按↑键或点击"绘制框"按钮进入绘制模式，拖动绘制边界框
-3. 选中标注框后，按Q-M键选择关键点类型，点击框内位置标注关键点
-4. 双击标注列表可修改类别或关键点可见性
+3. 选中标注框后，按 Q-M 键选择关键点类型，点击框内位置标注关键点
+4. **拖动关键点可微调位置** (v2.0.0 新增)
+5. 双击标注列表可修改类别或关键点可见性
 
 #### 模板文件格式
 
@@ -96,34 +107,34 @@ keypoints:
   - right_hand
 
 skeleton:
-  - [[0, 1], [0, 2]]  # head连接left_hand和right_hand
+  - [[0, 1], [0, 2]]  # head 连接 left_hand 和 right_hand
 ```
 
 ## 构建说明
 
 ### 构建要求
 
-- 已安装所有依赖（包括pyinstaller）
+- 已安装所有依赖（包括 pyinstaller）
 
-### Linux构建
+### Linux 构建
 
 ```bash
-# 方式1: 使用shell脚本
+# 方式 1: 使用 shell 脚本
 ./build_linux.sh
 
-# 方式2: 使用Python脚本
+# 方式 2: 使用 Python 脚本
 python build.py linux
 ```
 
 输出：`dist/labeleasy/labeleasy`
 
-### Windows构建
+### Windows 构建
 
 ```batch
-# 方式1: 使用bat脚本
+# 方式 1: 使用 bat 脚本
 build_windows.bat
 
-# 方式2: 使用Python脚本
+# 方式 2: 使用 Python 脚本
 python build.py windows
 ```
 
@@ -133,8 +144,8 @@ python build.py windows
 
 ```bash
 python build.py          # 自动检测系统并构建
-python build.py linux    # 构建Linux版本
-python build.py windows  # 构建Windows版本
+python build.py linux    # 构建 Linux 版本
+python build.py windows  # 构建 Windows 版本
 python build.py clean    # 清理构建缓存
 ```
 

@@ -13,7 +13,7 @@ from pathlib import Path
 
 APP_NAME = "labeleasy"
 MAIN_SCRIPT = "labeleasy"
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 ICON_PATH = "labeleasy/icon.ico"
 
 
@@ -50,10 +50,10 @@ def build_linux():
         "--windowed",
         "--clean",
         f"--add-data", f"{MAIN_SCRIPT}{os.pathsep}{MAIN_SCRIPT}",
-        "--hidden-import", "PyQt5",
-        "--hidden-import", "PyQt5.QtCore",
-        "--hidden-import", "PyQt5.QtGui",
-        "--hidden-import", "PyQt5.QtWidgets",
+        "--hidden-import", "PyQt6",
+        "--hidden-import", "PyQt6.QtCore",
+        "--hidden-import", "PyQt6.QtGui",
+        "--hidden-import", "PyQt6.QtWidgets",
         "--hidden-import", "cv2",
         "--hidden-import", "numpy",
         "--hidden-import", "yaml",
@@ -92,10 +92,10 @@ def build_windows():
         "--windowed",
         "--clean",
         f"--add-data", f"{MAIN_SCRIPT};{MAIN_SCRIPT}",
-        "--hidden-import", "PyQt5",
-        "--hidden-import", "PyQt5.QtCore",
-        "--hidden-import", "PyQt5.QtGui",
-        "--hidden-import", "PyQt5.QtWidgets",
+        "--hidden-import", "PyQt6",
+        "--hidden-import", "PyQt6.QtCore",
+        "--hidden-import", "PyQt6.QtGui",
+        "--hidden-import", "PyQt6.QtWidgets",
         "--hidden-import", "cv2",
         "--hidden-import", "numpy",
         "--hidden-import", "yaml",
