@@ -11,10 +11,10 @@ from PyQt6.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QSplitter, QFrame,
     QStatusBar, QToolBar, QMessageBox, QFileDialog,
     QTreeWidget, QTreeWidgetItem, QDialog, QComboBox,
-    QDialogButtonBox
+    QDialogButtonBox, QTextEdit, QFormLayout, QApplication
 )
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut
+from PyQt6.QtCore import Qt, QPoint, QUrl
+from PyQt6.QtGui import QKeySequence, QCursor, QIcon, QAction, QShortcut, QDesktopServices
 
 from .models import Template, Annotation, Keypoint
 from .canvas import Canvas
@@ -84,6 +84,97 @@ class KeypointVisDialog(QDialog):
     def accept(self):
         self.selected_vis = self.vis_combo.currentData()
         super().accept()
+
+
+class AboutDialog(QDialog):
+    """关于对话框"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("关于 labeleasy")
+        self.setMinimumWidth(500)
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        
+        # 标题和图标
+        title_layout = QHBoxLayout()
+        title_label = QLabel("🎨 labeleasy")
+        title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        layout.addLayout(title_layout)
+        
+        # 简介
+        intro_text = QLabel("YOLO 格式图像标注应用，支持边界框和关键点标注。")
+        intro_text.setWordWrap(True)
+        intro_text.setStyleSheet("font-size: 14px;")
+        layout.addWidget(intro_text)
+        
+        # 分隔线
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+        
+        # 信息表单
+        info_layout = QFormLayout()
+        info_layout.setSpacing(10)
+        
+        # 版本信息
+        version_label = QLabel("v2.0.0")
+        version_label.setStyleSheet("font-weight: bold;")
+        info_layout.addRow("版本:", version_label)
+        
+        # PyQt6 信息
+        qt_label = QLabel("PyQt6")
+        info_layout.addRow("界面框架:", qt_label)
+        
+        # 仓库位置
+        repo_label = QLabel("GitHub")
+        repo_btn = QPushButton("访问仓库")
+        repo_btn.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl("https://github.com/OathOfSilence/labeleasy")
+        ))
+        repo_widget = QWidget()
+        repo_layout = QHBoxLayout(repo_widget)
+        repo_layout.setContentsMargins(0, 0, 0, 0)
+        repo_layout.addWidget(repo_label)
+        repo_layout.addWidget(repo_btn)
+        info_layout.addRow("代码仓库:", repo_widget)
+        
+        # 作者信息
+        author_label = QLabel("OathOfSilence")
+        author_btn = QPushButton("访问主页")
+        author_btn.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl("https://github.com/OathOfSilence")
+        ))
+        author_widget = QWidget()
+        author_layout = QHBoxLayout(author_widget)
+        author_layout.setContentsMargins(0, 0, 0, 0)
+        author_layout.addWidget(author_label)
+        author_layout.addWidget(author_btn)
+        info_layout.addRow("作者:", author_widget)
+        
+        layout.addLayout(info_layout)
+        
+        # 分隔线
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.Shape.HLine)
+        line2.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line2)
+        
+        # 许可证
+        license_label = QLabel("Apache License 2.0")
+        license_label.setStyleSheet("color: #666; font-size: 12px;")
+        layout.addWidget(license_label)
+        
+        # 关闭按钮
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
 
 
 class MainWindow(QMainWindow):
@@ -224,6 +315,12 @@ class MainWindow(QMainWindow):
         template_menu = menubar.addMenu("模板")
         template_menu.addAction("保存当前模板", self.save_template)
         template_menu.addAction("编辑模板", self.edit_template)
+        
+        help_menu = menubar.addMenu("帮助")
+        help_menu.addAction("使用手册", self.open_manual)
+        help_menu.addAction("报告缺陷", self.report_issue)
+        help_menu.addSeparator()
+        help_menu.addAction("关于 labeleasy", self.show_about)
     
     def setup_shortcuts(self):
         QShortcut(QKeySequence(Qt.Key.Key_Left), self, self.prev_image)
@@ -696,6 +793,21 @@ class MainWindow(QMainWindow):
         if dialog.exec() == TemplateEditDialog.DialogCode.Accepted:
             self.update_keypoint_list()
             self.status_bar.showMessage("模板已更新")
+    
+    def open_manual(self):
+        """打开使用手册 - GitHub README"""
+        QDesktopServices.openUrl(QUrl("https://github.com/OathOfSilence/labeleasy/blob/main/README.md"))
+        self.status_bar.showMessage("正在打开使用手册...")
+    
+    def report_issue(self):
+        """打开报告缺陷页面 - GitHub Issues"""
+        QDesktopServices.openUrl(QUrl("https://github.com/OathOfSilence/labeleasy/issues"))
+        self.status_bar.showMessage("正在打开问题反馈页面...")
+    
+    def show_about(self):
+        """显示关于对话框"""
+        dialog = AboutDialog(self)
+        dialog.exec()
     
     def open_project(self):
         if self.show_config_dialog():
