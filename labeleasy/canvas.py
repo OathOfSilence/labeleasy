@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional
 from copy import deepcopy
 
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt, QPoint, QRect, pyqtSignal
+from PySide6.QtCore import Qt, QPoint, QRect, Signal
 from PySide6.QtGui import (
     QPainter, QColor, QPen, QBrush, QFont, QPixmap, QImage,
     QCursor
@@ -18,11 +18,11 @@ from .constants import SKELETON_COLORS, KEYBOARD_LAYOUT
 
 
 class Canvas(QWidget):
-    annotation_clicked = pyqtSignal(int)
-    keypoint_clicked = pyqtSignal(int, int)
-    annotation_added = pyqtSignal()
-    annotation_modified = pyqtSignal()
-    request_save_undo = pyqtSignal()
+    annotation_clicked = Signal(int)
+    keypoint_clicked = Signal(int, int)
+    annotation_added = Signal()
+    annotation_modified = Signal()
+    request_save_undo = Signal()
     
     CORNER_SIZE = 8
     

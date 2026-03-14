@@ -98,19 +98,34 @@ class AboutDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
-        # 标题和图标
-        title_layout = QHBoxLayout()
-        title_label = QLabel("🎨 labeleasy")
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
-        title_layout.addWidget(title_label)
-        title_layout.addStretch()
-        layout.addLayout(title_layout)
+        # Logo 和标题
+        logo_layout = QHBoxLayout()
+        logo_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 加载软件图标
+        icon_path = get_resource_path("labeleasy/icon.ico")
+        if icon_path.exists():
+            logo_label = QLabel()
+            pixmap = QPixmap(str(icon_path)).scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(pixmap)
+            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo_layout.addWidget(logo_label)
+        
+        layout.addLayout(logo_layout)
+        
+        # 标题
+        title_label = QLabel("labeleasy")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("font-size: 28px; font-weight: bold;")
+        layout.addWidget(title_label)
         
         # 简介
-        intro_text = QLabel("YOLO 格式图像标注应用，支持边界框和关键点标注。")
+        intro_text = QLabel("YOLO 格式图像标注应用\n支持边界框和关键点标注")
+        intro_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
         intro_text.setWordWrap(True)
-        intro_text.setStyleSheet("font-size: 14px;")
+        intro_text.setStyleSheet("font-size: 14px; color: #666;")
         layout.addWidget(intro_text)
         
         # 分隔线
@@ -121,15 +136,11 @@ class AboutDialog(QDialog):
         
         # 信息表单
         info_layout = QFormLayout()
-        info_layout.setSpacing(10)
-        
-        # 版本信息
-        version_label = QLabel("v2.0.0")
-        version_label.setStyleSheet("font-weight: bold;")
-        info_layout.addRow("版本:", version_label)
+        info_layout.setSpacing(12)
+        info_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         
         # PySide6 信息
-        qt_label = QLabel("PySide6")
+        qt_label = QLabel("PySide6 (Qt for Python)")
         info_layout.addRow("界面框架:", qt_label)
         
         # 仓库位置
