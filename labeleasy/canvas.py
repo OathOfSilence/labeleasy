@@ -294,8 +294,9 @@ class Canvas(QWidget):
             is_copy_selected = any(sk[0] == kp_idx for sk in self.selected_keypoints_for_copy)
             
             if is_copy_selected:
+                # Ctrl+ 选中的关键点：青色，大尺寸
                 painter.setBrush(QBrush(QColor(0, 255, 255)))
-                radius = 8
+                radius = 9
             elif is_selected:
                 painter.setBrush(QBrush(QColor(255, 0, 255)))
                 radius = 8
@@ -357,11 +358,17 @@ class Canvas(QWidget):
             img_pos = self.screen_to_img(event.position().x(), event.position().y())
             screen_pos = event.position().toPoint()
             
+            # Ctrl+ 点击：切换关键点选中状态（扩充/删除）
             if self.keypoint_select_mode and self.selected_annotation_idx >= 0:
-                self.kp_select_drawing = True
-                self.kp_select_start = screen_pos
-                self.kp_select_end = screen_pos
-                return
+                if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+                    self.toggle_keypoint_selection(screen_pos)
+                    return
+                else:
+                    # 非 Ctrl 点击：开始框选
+                    self.kp_select_drawing = True
+                    self.kp_select_start = screen_pos
+                    self.kp_select_end = screen_pos
+                    return
             
             if self.drawing_mode == 'bbox':
                 self.drawing = True
@@ -666,7 +673,34 @@ class Canvas(QWidget):
         self.annotation_modified.emit()
         self.update()
     
+    def toggle_keypoint_selection(self, screen_pos: QPoint):
+        """Ctrl+ 点击：切换关键点选中状态（扩充/删除）"""
+        if self.selected_annotation_idx < 0:
+            return
+        
+        ann = self.annotations[self.selected_annotation_idx]
+        
+        # 查找点击位置的关键点
+        for kp_idx, kp in enumerate(ann.keypoints):
+            if kp.vis == 0:
+                continue
+            kp_screen = self.img_to_screen(kp.x, kp.y)
+            if (kp_screen - screen_pos).manhattanLength() < 10:
+                # 检查是否已选中
+                existing_idx = next((i for i, (idx, _) in enumerate(self.selected_keypoints_for_copy) if idx == kp_idx), None)
+                if existing_idx is not None:
+                    # 已选中 → 删除
+                    self.selected_keypoints_for_copy.pop(existing_idx)
+                else:
+                    # 未选中 → 添加
+                    self.selected_keypoints_for_copy.append((kp_idx, deepcopy(kp)))
+                self.update()
+                return
+        
+        self.update()
+    
     def finish_keypoint_selection(self):
+        """框选：刷新选中列表（覆盖），仅框内的关键点被选中"""
         if not self.kp_select_start or not self.kp_select_end:
             return
         
@@ -677,6 +711,7 @@ class Canvas(QWidget):
         
         sel_rect = QRect(self.kp_select_start, self.kp_select_end).normalized()
         
+        # 清空旧选中，只保留框内的关键点
         self.selected_keypoints_for_copy = []
         for kp_idx, kp in enumerate(ann.keypoints):
             if kp.vis == 0:
@@ -722,6 +757,7 @@ class Canvas(QWidget):
         self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
     
     def start_keypoint_select_mode(self):
+        """进入框选点模式，清空选中列表"""
         self.keypoint_select_mode = True
         self.drawing_mode = None
         self.current_keypoint_id = -1
