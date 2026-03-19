@@ -23,6 +23,7 @@ from .config import ConfigManager
 from .utils import get_image_files, get_label_path, load_annotations, save_annotations
 from .constants import KEYPOINT_KEY_MAP, KEYBOARD_LAYOUT
 from .config import get_app_dir, get_resource_path
+from .modes import KeypointMode, EdgeMode, BboxDrawingMode
 
 
 MAX_UNDO_HISTORY = 50
@@ -262,7 +263,8 @@ class MainWindow(QMainWindow):
         
         self.keypoint_list = QListWidget()
         self.keypoint_list.itemClicked.connect(self.on_keypoint_selected)
-        right_layout.addWidget(QLabel("关键点 (点击或按键盘):"))
+        self.keypoint_list_label = QLabel("关键点 (点击或按键盘):")
+        right_layout.addWidget(self.keypoint_list_label)
         right_layout.addWidget(self.keypoint_list)
         
         right_panel.setMaximumWidth(200)
@@ -582,20 +584,37 @@ class MainWindow(QMainWindow):
             self.annotation_tree.addTopLevelItem(item)
     
     def update_keypoint_list(self):
+        """更新右侧列表：有关键点时显示关键点，无关键点时显示类别"""
         self.keypoint_list.clear()
         if not self.template:
             return
         
-        kp_idx = 0
-        for row in KEYBOARD_LAYOUT:
-            for ch in row:
-                if kp_idx < len(self.template.keypoints):
-                    self.keypoint_list.addItem(f"[{ch}] {self.template.keypoints[kp_idx]}")
-                    kp_idx += 1
+        has_kp = self.template.has_keypoints()
         
-        while kp_idx < len(self.template.keypoints):
-            self.keypoint_list.addItem(f"[?] {self.template.keypoints[kp_idx]}")
-            kp_idx += 1
+        if has_kp:
+            # 有关键点：显示关键点列表
+            self.keypoint_list_label.setText("关键点 (点击或按键盘):")
+            kp_idx = 0
+            for row in KEYBOARD_LAYOUT:
+                for ch in row:
+                    if kp_idx < len(self.template.keypoints):
+                        self.keypoint_list.addItem(f"[{ch}] {self.template.keypoints[kp_idx]}")
+                        kp_idx += 1
+            while kp_idx < len(self.template.keypoints):
+                self.keypoint_list.addItem(f"[?] {self.template.keypoints[kp_idx]}")
+                kp_idx += 1
+        else:
+            # 无关键点：显示类别列表（纯目标检测模式）
+            self.keypoint_list_label.setText("类别 (点击或按键盘创建框):")
+            class_idx = 0
+            for row in KEYBOARD_LAYOUT:
+                for ch in row:
+                    if class_idx < len(self.template.names):
+                        self.keypoint_list.addItem(f"[{ch}] {self.template.names[class_idx]}")
+                        class_idx += 1
+            while class_idx < len(self.template.names):
+                self.keypoint_list.addItem(f"[?] {self.template.names[class_idx]}")
+                class_idx += 1
     
     def on_image_selected(self, item: QListWidgetItem):
         idx = self.image_list.row(item)
@@ -640,11 +659,24 @@ class MainWindow(QMainWindow):
                         self.save_current_annotations()
     
     def on_keypoint_selected(self, item: QListWidgetItem):
+        """点击右侧列表项"""
         idx = self.keypoint_list.row(item)
-        if self.canvas.selected_annotation_idx >= 0:
-            self.canvas.start_keypoint_drawing(idx)
-            if self.template and idx < len(self.template.keypoints):
-                self.status_bar.showMessage(f"绘制关键点 [{self.canvas.get_keypoint_shortcut(idx)}]: {self.template.keypoints[idx]} - 点击框内位置")
+        if not self.template:
+            return
+        
+        has_kp = self.template.has_keypoints()
+        
+        if has_kp:
+            # 有关键点模式：选择关键点类型（暂未实现快捷绘制关键点）
+            pass
+        else:
+            # 无关键点模式：进入绘制模式，预设类别
+            mode = self.canvas.modes.get('drawing')
+            if mode:
+                mode.set_pending_class(idx)
+                self.canvas.set_mode('drawing')
+                class_name = self.template.names[idx] if idx < len(self.template.names) else "?"
+                self.status_bar.showMessage(f"绘制检测框：{class_name} - 拖动鼠标绘制")
     
     def on_canvas_annotation_clicked(self, idx: int):
         for i in range(self.annotation_tree.topLevelItemCount()):
@@ -665,7 +697,25 @@ class MainWindow(QMainWindow):
     def on_canvas_annotation_added(self):
         self.annotations = self.canvas.annotations
         
+        # 判断是否需要弹出类别选择框
+        need_class_select = False
         if self.template and len(self.template.names) > 1:
+            # 检查是否预设了类别（快捷键/点击列表）
+            drawing_mode = self.canvas.modes.get('drawing')
+            if drawing_mode and hasattr(drawing_mode, 'pending_class_id'):
+                # pending_class_id >= 0 表示预设了类别，不弹框
+                # pending_class_id < 0 表示直接绘制，需要弹框
+                if drawing_mode.pending_class_id < 0:
+                    need_class_select = True
+            else:
+                # 无关键点模式且没有预设类别，需要弹框
+                if not self.template.has_keypoints():
+                    need_class_select = True
+                # 有关键点模式，需要弹框
+                elif self.template.has_keypoints():
+                    need_class_select = True
+        
+        if need_class_select:
             dialog = ClassSelectDialog(self.template.names, 0, self)
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 self.canvas.set_annotation_class(dialog.selected_class)
@@ -684,16 +734,36 @@ class MainWindow(QMainWindow):
             self.save_current_annotations()
     
     def on_keypoint_shortcut(self, kp_id: int):
-        if self.canvas.selected_annotation_idx < 0:
-            return
+        """快捷键触发：有关键点时进入关键点绘制模式，无关键点时进入框绘制模式"""
         if not self.template:
             return
-        if kp_id >= len(self.template.keypoints):
-            self.status_bar.showMessage(f"关键点索引 {kp_id} 超出范围 (模板共 {len(self.template.keypoints)} 个关键点)")
-            return
         
-        self.canvas.start_keypoint_drawing(kp_id)
-        self.status_bar.showMessage(f"绘制关键点 [{self.canvas.get_keypoint_shortcut(kp_id)}]: {self.template.keypoints[kp_id]} - 点击框内位置")
+        has_kp = self.template.has_keypoints()
+        
+        if has_kp:
+            # 有关键点模式：进入关键点绘制模式
+            if self.canvas.selected_annotation_idx < 0:
+                self.status_bar.showMessage("请先选择一个标注框")
+                return
+            if kp_id >= len(self.template.keypoints):
+                self.status_bar.showMessage(f"关键点索引 {kp_id} 超出范围")
+                return
+            
+            self.canvas.start_keypoint_drawing(kp_id)
+            shortcut = self.canvas.get_keypoint_shortcut(kp_id)
+            self.status_bar.showMessage(f"绘制关键点 [{shortcut}]: {self.template.keypoints[kp_id]} - 点击位置放置")
+        else:
+            # 无关键点模式：进入绘制模式，预设类别
+            if kp_id >= len(self.template.names):
+                self.status_bar.showMessage(f"类别索引 {kp_id} 超出范围")
+                return
+            
+            mode = self.canvas.modes.get('drawing')
+            if mode:
+                mode.set_pending_class(kp_id)
+            self.canvas.set_mode('drawing')
+            class_name = self.template.names[kp_id] if kp_id < len(self.template.names) else "?"
+            self.status_bar.showMessage(f"绘制检测框：{class_name} - 拖动鼠标绘制")
     
     def prev_image(self):
         if self.current_image_idx > 0:
@@ -704,20 +774,39 @@ class MainWindow(QMainWindow):
             self.load_image(self.current_image_idx + 1)
     
     def start_bbox_drawing(self):
-        if self.canvas.drawing_mode == 'keypoint':
-            self.canvas.stop_drawing()
-        self.canvas.start_bbox_drawing()
-        self.status_bar.showMessage("绘制边界框: 拖动鼠标绘制")
+        """进入绘制边界框模式"""
+        mode = self.canvas.modes.get('drawing')
+        if mode:
+            mode.set_pending_class(-1)
+        self.canvas.set_mode('drawing')
+        if self.canvas.current_mode:
+            self.status_bar.showMessage(self.canvas.current_mode.get_status_message())
     
     def start_keypoint_select_mode(self):
-        if self.canvas.selected_annotation_idx < 0:
-            self.status_bar.showMessage("请先选择一个标注框")
+        """向下箭头：有关键点时框选关键点，无关键点时框选边"""
+        if not self.template:
             return
-        self.canvas.start_keypoint_select_mode()
-        self.status_bar.showMessage("框选关键点模式: 拖动选择关键点，然后按Ctrl+C复制")
+        
+        has_kp = self.template.has_keypoints()
+        
+        if has_kp:
+            # 有关键点模式
+            if self.canvas.selected_annotation_idx < 0:
+                self.status_bar.showMessage("请先选择一个标注框")
+                return
+            self.canvas.set_mode('keypoint')
+        else:
+            # 无关键点模式：框选边
+            if self.canvas.selected_annotation_idx < 0:
+                self.status_bar.showMessage("请先选择一个标注框")
+                return
+            self.canvas.set_mode('edge')
+        
+        if self.canvas.current_mode:
+            self.status_bar.showMessage(self.canvas.current_mode.get_status_message())
     
     def cancel_operation(self):
-        self.canvas.stop_drawing()
+        self.canvas.stop_all_modes()
         self.status_bar.showMessage("已取消操作")
     
     def save_current(self):
@@ -744,15 +833,20 @@ class MainWindow(QMainWindow):
                 self.save_current_annotations()
     
     def copy_selected(self):
-        self.canvas.copy_selected()
-        kp_count = len(self.canvas.clipboard_keypoints)
-        if kp_count > 0:
-            self.status_bar.showMessage(f"已复制 {kp_count} 个关键点")
+        self.canvas.copy()
+        if self.canvas.current_mode:
+            mode = self.canvas.current_mode
+            if hasattr(mode, 'selected_edges') and mode.selected_edges:
+                self.status_bar.showMessage(f"已复制 {len(mode.selected_edges)} 条边")
+            elif hasattr(mode, 'selected_for_copy') and mode.selected_for_copy:
+                self.status_bar.showMessage(f"已复制 {len(mode.selected_for_copy)} 个关键点")
+            else:
+                self.status_bar.showMessage("已复制")
         else:
-            self.status_bar.showMessage("已复制选中框的所有关键点")
+            self.status_bar.showMessage("已复制")
     
     def paste_to_selected(self):
-        if not self.canvas.clipboard_keypoints:
+        if not self.canvas.clipboard:
             self.status_bar.showMessage("剪贴板为空")
             return
         if self.canvas.selected_annotation_idx < 0:
@@ -760,13 +854,14 @@ class MainWindow(QMainWindow):
             return
         
         self.save_undo_state()
-        self.canvas.paste_keypoints()
+        success, msg = self.canvas.paste()
+        self.status_bar.showMessage(msg)
+        # 无论成功失败都更新（失败时显示冲突信息）
         self.annotations = self.canvas.annotations
         self.modified = True
         self.update_annotation_tree()
-        if self.auto_save:
+        if self.auto_save and success:
             self.save_current_annotations()
-        self.status_bar.showMessage("已粘贴关键点")
     
     def toggle_auto_save(self):
         self.auto_save = self.auto_save_action.isChecked()

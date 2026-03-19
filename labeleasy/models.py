@@ -105,13 +105,17 @@ class Template:
     def validate(self) -> List[str]:
         errors = []
         if not self.names:
-            errors.append("names列表不能为空")
-        if not self.keypoints:
-            errors.append("keypoints列表不能为空")
-        for group in self.skeleton:
-            for conn in group:
-                if len(conn) != 2:
-                    errors.append(f"骨架连接格式错误: {conn}")
-                elif conn[0] >= len(self.keypoints) or conn[1] >= len(self.keypoints):
-                    errors.append(f"骨架连接索引超出范围: {conn}")
+            errors.append("names 列表不能为空")
+        # 允许 keypoints 为空（纯目标检测模式）
+        if self.keypoints:
+            for group in self.skeleton:
+                for conn in group:
+                    if len(conn) != 2:
+                        errors.append(f"骨架连接格式错误：{conn}")
+                    elif conn[0] >= len(self.keypoints) or conn[1] >= len(self.keypoints):
+                        errors.append(f"骨架连接索引超出范围：{conn}")
         return errors
+    
+    def has_keypoints(self) -> bool:
+        """判断模板是否包含关键点"""
+        return len(self.keypoints) > 0
