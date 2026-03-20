@@ -24,6 +24,7 @@ from .utils import get_image_files, get_label_path, load_annotations, save_annot
 from .constants import KEYPOINT_KEY_MAP, KEYBOARD_LAYOUT
 from .config import get_app_dir, get_resource_path
 from .modes import KeypointMode, EdgeMode, BboxDrawingMode
+from . import __version__
 
 
 MAX_UNDO_HISTORY = 50
@@ -121,6 +122,12 @@ class AboutDialog(QDialog):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-size: 28px; font-weight: bold;")
         layout.addWidget(title_label)
+        
+        # 版本号
+        version_label = QLabel(f"v{__version__}")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        version_label.setStyleSheet("font-size: 14px; color: #888;")
+        layout.addWidget(version_label)
         
         # 简介
         intro_text = QLabel("YOLO 格式图像标注应用\n支持边界框和关键点标注")
