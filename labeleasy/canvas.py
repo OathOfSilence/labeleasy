@@ -503,32 +503,70 @@ class Canvas(QWidget):
         return None
     
     def _handle_click(self, event):
-        """处理普通点击：选择标注框或关键点"""
+        """处理普通点击：选择标注框或关键点
+        
+        选择策略：
+        1. 面积优先：点击位置有多个框时，选择面积最小的
+        2. 保持选中：已选中某个框时，点击其范围内任何位置都保持选中
+        """
         img_pos = self.screen_to_img(event.position().x(), event.position().y())
         screen_pos = event.position().toPoint()
         
+        # 找出所有包含点击位置的标注框
+        candidates = []
         for idx, ann in enumerate(self.annotations):
             if ann.contains_point(img_pos[0], img_pos[1]):
-                # 检查是否点击关键点
-                for kp_idx, kp in enumerate(ann.keypoints):
-                    kp_screen = self.img_to_screen(kp.x, kp.y)
-                    if (kp_screen - screen_pos).manhattanLength() < 10:
-                        self.selected_annotation_idx = idx
-                        self.selected_keypoint_idx = kp_idx
-                        self.keypoint_clicked.emit(idx, kp_idx)
-                        self.update()
-                        return
-                
-                # 点击标注框
-                self.selected_annotation_idx = idx
-                self.selected_keypoint_idx = -1
-                self.annotation_clicked.emit(idx)
+                candidates.append(idx)
+        
+        if not candidates:
+            # 点击空白
+            self.selected_annotation_idx = -1
+            self.selected_keypoint_idx = -1
+            self.update()
+            return
+        
+        # 问题2：如果当前已选中某个框，且点击位置在该框范围内，保持选中
+        if self.selected_annotation_idx in candidates:
+            ann = self.annotations[self.selected_annotation_idx]
+            # 检查是否点击关键点
+            for kp_idx, kp in enumerate(ann.keypoints):
+                kp_screen = self.img_to_screen(kp.x, kp.y)
+                if (kp_screen - screen_pos).manhattanLength() < 10:
+                    self.selected_keypoint_idx = kp_idx
+                    self.keypoint_clicked.emit(self.selected_annotation_idx, kp_idx)
+                    self.update()
+                    return
+            
+            # 保持选中当前框，不切换
+            self.selected_keypoint_idx = -1
+            self.update()
+            return
+        
+        # 问题1：面积优先 - 选择面积最小的框
+        min_area = float('inf')
+        best_idx = candidates[0]
+        for idx in candidates:
+            ann = self.annotations[idx]
+            area = ann.width * ann.height
+            if area < min_area:
+                min_area = area
+                best_idx = idx
+        
+        ann = self.annotations[best_idx]
+        # 检查是否点击关键点
+        for kp_idx, kp in enumerate(ann.keypoints):
+            kp_screen = self.img_to_screen(kp.x, kp.y)
+            if (kp_screen - screen_pos).manhattanLength() < 10:
+                self.selected_annotation_idx = best_idx
+                self.selected_keypoint_idx = kp_idx
+                self.keypoint_clicked.emit(best_idx, kp_idx)
                 self.update()
                 return
         
-        # 点击空白
-        self.selected_annotation_idx = -1
+        # 点击标注框
+        self.selected_annotation_idx = best_idx
         self.selected_keypoint_idx = -1
+        self.annotation_clicked.emit(best_idx)
         self.update()
     
     def _update_hover(self, screen_pos: QPoint, img_pos: Tuple[float, float]):
