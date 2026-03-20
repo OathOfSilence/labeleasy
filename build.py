@@ -13,7 +13,7 @@ from pathlib import Path
 
 APP_NAME = "labeleasy"
 MAIN_SCRIPT = "labeleasy"
-VERSION = "2.0.0"
+VERSION = "3.0.0"
 ICON_PATH = "labeleasy/icon.ico"
 
 
