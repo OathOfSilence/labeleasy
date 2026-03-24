@@ -235,20 +235,81 @@ class EdgeMode(AnnotationMode):
         return (ccw(p1, p3, p4) != ccw(p2, p3, p4)) and (ccw(p1, p2, p3) != ccw(p1, p2, p4))
     
     def copy(self) -> Optional[Any]:
-        """复制选中的边"""
-        if self.selected_edges:
-            return [e.copy() for e in self.selected_edges]
-        return None
+        """复制选中的边
+        
+        如果选中了完整的四条边，返回完整框信息，支持无选中框粘贴创建新框
+        """
+        if not self.selected_edges:
+            return None
+        
+        result = {
+            'type': 'edges',
+            'edges': [e.copy() for e in self.selected_edges],
+            'full_bbox': None
+        }
+        
+        # 检测是否选中了完整的四条边（同一标注框）
+        if len(self.selected_edges) == 4:
+            ann_idx = self.selected_edges[0]['ann_idx']
+            edge_types = set(e['type'] for e in self.selected_edges)
+            
+            if edge_types == {'left', 'right', 'top', 'bottom'} and \
+               all(e['ann_idx'] == ann_idx for e in self.selected_edges):
+                # 完整框，提取框信息
+                ann = self.canvas.annotations[ann_idx]
+                from copy import deepcopy
+                result['full_bbox'] = {
+                    'class_id': ann.class_id,
+                    'x_center': ann.x_center,
+                    'y_center': ann.y_center,
+                    'width': ann.width,
+                    'height': ann.height,
+                    'keypoints': deepcopy(ann.keypoints) if ann.keypoints else []
+                }
+        
+        return result
     
     def paste(self, data: Any) -> Tuple[bool, str]:
-        """粘贴边信息"""
-        if not data or self.canvas.selected_annotation_idx < 0:
+        """粘贴边信息
+        
+        如果有完整框数据且无选中框，则创建新标注框
+        """
+        if not data:
             return (False, "无法粘贴")
+        
+        # 检查是否有完整框数据
+        if isinstance(data, dict) and data.get('full_bbox'):
+            # 无选中框时，创建新标注框
+            if self.canvas.selected_annotation_idx < 0:
+                bbox_info = data['full_bbox']
+                from .models import Annotation, Keypoint
+                new_ann = Annotation(
+                    class_id=bbox_info['class_id'],
+                    x_center=bbox_info['x_center'],
+                    y_center=bbox_info['y_center'],
+                    width=bbox_info['width'],
+                    height=bbox_info['height'],
+                    keypoints=[Keypoint(x=kp.x, y=kp.y, vis=kp.vis) for kp in bbox_info.get('keypoints', [])]
+                )
+                self.canvas.annotations.append(new_ann)
+                self.canvas.selected_annotation_idx = len(self.canvas.annotations) - 1
+                self.canvas.annotation_modified.emit()
+                self.canvas.update()
+                return (True, "已创建新标注框")
+        
+        # 原有逻辑：粘贴边到选中框
+        if self.canvas.selected_annotation_idx < 0:
+            return (False, "请先选择目标标注框")
+        
+        # 提取边数据
+        edges = data.get('edges', data) if isinstance(data, dict) else data
+        if not edges:
+            return (False, "无可粘贴的边数据")
         
         success_count = 0
         messages = []
         
-        for edge_info in data:
+        for edge_info in edges:
             ann = self.canvas.annotations[self.canvas.selected_annotation_idx]
             x1, y1, x2, y2 = ann.get_bbox_coords()
             

@@ -844,7 +844,11 @@ class MainWindow(QMainWindow):
         if self.canvas.current_mode:
             mode = self.canvas.current_mode
             if hasattr(mode, 'selected_edges') and mode.selected_edges:
-                self.status_bar.showMessage(f"已复制 {len(mode.selected_edges)} 条边")
+                # 检查是否复制了完整框
+                if isinstance(self.canvas.clipboard, dict) and self.canvas.clipboard.get('full_bbox'):
+                    self.status_bar.showMessage("已复制完整标注框")
+                else:
+                    self.status_bar.showMessage(f"已复制 {len(mode.selected_edges)} 条边")
             elif hasattr(mode, 'selected_for_copy') and mode.selected_for_copy:
                 self.status_bar.showMessage(f"已复制 {len(mode.selected_for_copy)} 个关键点")
             else:
@@ -856,14 +860,21 @@ class MainWindow(QMainWindow):
         if not self.canvas.clipboard:
             self.status_bar.showMessage("剪贴板为空")
             return
-        if self.canvas.selected_annotation_idx < 0:
+        
+        # 检查是否有完整框数据（允许无选中框粘贴）
+        has_full_bbox = (
+            isinstance(self.canvas.clipboard, dict) and 
+            self.canvas.clipboard.get('full_bbox')
+        )
+        
+        if self.canvas.selected_annotation_idx < 0 and not has_full_bbox:
             self.status_bar.showMessage("请先选择目标标注框")
             return
         
         self.save_undo_state()
         success, msg = self.canvas.paste()
         self.status_bar.showMessage(msg)
-        # 无论成功失败都更新（失败时显示冲突信息）
+        #无论成功失败都更新（失败时显示冲突信息）
         self.annotations = self.canvas.annotations
         self.modified = True
         self.update_annotation_tree()

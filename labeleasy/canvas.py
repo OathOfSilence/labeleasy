@@ -656,6 +656,32 @@ class Canvas(QWidget):
         """粘贴内容"""
         if not self.clipboard:
             return (False, "剪贴板为空")
+        
+        # 检查是否有完整框数据（来自框选边模式）
+        if isinstance(self.clipboard, dict) and self.clipboard.get('full_bbox'):
+            # 无选中框时，创建新标注框
+            if self.selected_annotation_idx < 0:
+                self.request_save_undo.emit()
+                bbox_info = self.clipboard['full_bbox']
+                new_ann = Annotation(
+                    class_id=bbox_info['class_id'],
+                    x_center=bbox_info['x_center'],
+                    y_center=bbox_info['y_center'],
+                    width=bbox_info['width'],
+                    height=bbox_info['height'],
+                    keypoints=[Keypoint(x=kp.x, y=kp.y, vis=kp.vis) for kp in bbox_info.get('keypoints', [])]
+                )
+                self.annotations.append(new_ann)
+                self.selected_annotation_idx = len(self.annotations) - 1
+                self.annotation_modified.emit()
+                self.update()
+                return (True, "已创建新标注框")
+            # 有选中框时，粘贴边
+            else:
+                edges = self.clipboard.get('edges', [])
+                if edges:
+                    return self._paste_edges(edges)
+        
         if self.selected_annotation_idx < 0:
             return (False, "请先选择目标标注框")
         
