@@ -25,6 +25,7 @@ class Canvas(QWidget):
     request_save_undo = Signal()
     
     CORNER_SIZE = 8
+    MIN_BBOX_IMAGE_PIXELS = 1
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -116,6 +117,17 @@ class Canvas(QWidget):
         
         self.update()
     
+
+    def get_min_bbox_size(self) -> Tuple[float, float]:
+        """Return the minimum bbox size in normalized image coordinates."""
+        if self.image is None:
+            return 0.0, 0.0
+
+        h, w = self.image.shape[:2]
+        min_width = self.MIN_BBOX_IMAGE_PIXELS / w if w > 0 else 0.0
+        min_height = self.MIN_BBOX_IMAGE_PIXELS / h if h > 0 else 0.0
+        return min_width, min_height
+
     def get_keypoint_shortcut(self, kp_idx: int) -> str:
         idx = 0
         for row in KEYBOARD_LAYOUT:
@@ -543,18 +555,20 @@ class Canvas(QWidget):
         x2 = orig.x_center + orig.width / 2
         y2 = orig.y_center + orig.height / 2
         
+        min_width, min_height = self.get_min_bbox_size()
+
         if self.dragging_corner == 0:
-            x1 = max(0, min(x2 - 0.01, x1 + dx))
-            y1 = max(0, min(y2 - 0.01, y1 + dy))
+            x1 = max(0, min(x2 - min_width, x1 + dx))
+            y1 = max(0, min(y2 - min_height, y1 + dy))
         elif self.dragging_corner == 1:
-            x2 = min(1, max(x1 + 0.01, x2 + dx))
-            y1 = max(0, min(y2 - 0.01, y1 + dy))
+            x2 = min(1, max(x1 + min_width, x2 + dx))
+            y1 = max(0, min(y2 - min_height, y1 + dy))
         elif self.dragging_corner == 2:
-            x1 = max(0, min(x2 - 0.01, x1 + dx))
-            y2 = min(1, max(y1 + 0.01, y2 + dy))
+            x1 = max(0, min(x2 - min_width, x1 + dx))
+            y2 = min(1, max(y1 + min_height, y2 + dy))
         elif self.dragging_corner == 3:
-            x2 = min(1, max(x1 + 0.01, x2 + dx))
-            y2 = min(1, max(y1 + 0.01, y2 + dy))
+            x2 = min(1, max(x1 + min_width, x2 + dx))
+            y2 = min(1, max(y1 + min_height, y2 + dy))
         
         ann.x_center = (x1 + x2) / 2
         ann.y_center = (y1 + y2) / 2
@@ -624,7 +638,8 @@ class Canvas(QWidget):
         x2 = max(0, min(1, x2))
         y2 = max(0, min(1, y2))
         
-        if abs(x2 - x1) < 0.01 or abs(y2 - y1) < 0.01:
+        min_width, min_height = self.get_min_bbox_size()
+        if abs(x2 - x1) < min_width or abs(y2 - y1) < min_height:
             return
         
         self.request_save_undo.emit()
