@@ -27,6 +27,7 @@ class Canvas(QWidget):
     request_save_undo = Signal()
     
     CORNER_SIZE = 8
+    MIN_BBOX_IMAGE_PIXELS = 1
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -173,6 +174,16 @@ class Canvas(QWidget):
         self.offset.setY(0)
         self.update()
     
+    def get_min_bbox_size(self) -> Tuple[float, float]:
+        """Return the minimum bbox size in normalized image coordinates."""
+        if self.image is None:
+            return 0.0, 0.0
+
+        h, w = self.image.shape[:2]
+        min_width = self.MIN_BBOX_IMAGE_PIXELS / w if w > 0 else 0.0
+        min_height = self.MIN_BBOX_IMAGE_PIXELS / h if h > 0 else 0.0
+        return min_width, min_height
+
     # ========== 坐标转换 ==========
     
     def get_image_rect(self) -> QRect:
@@ -605,15 +616,17 @@ class Canvas(QWidget):
         y1 = orig.y_center - orig.height / 2
         x2 = orig.x_center + orig.width / 2
         y2 = orig.y_center + orig.height / 2
+
+        min_width, min_height = self.get_min_bbox_size()
         
         if self.dragging_corner == 0:
-            x1, y1 = max(0, min(x2 - 0.01, x1 + dx)), max(0, min(y2 - 0.01, y1 + dy))
+            x1, y1 = max(0, min(x2 - min_width, x1 + dx)), max(0, min(y2 - min_height, y1 + dy))
         elif self.dragging_corner == 1:
-            x2, y1 = min(1, max(x1 + 0.01, x2 + dx)), max(0, min(y2 - 0.01, y1 + dy))
+            x2, y1 = min(1, max(x1 + min_width, x2 + dx)), max(0, min(y2 - min_height, y1 + dy))
         elif self.dragging_corner == 2:
-            x1, y2 = max(0, min(x2 - 0.01, x1 + dx)), min(1, max(y1 + 0.01, y2 + dy))
+            x1, y2 = max(0, min(x2 - min_width, x1 + dx)), min(1, max(y1 + min_height, y2 + dy))
         elif self.dragging_corner == 3:
-            x2, y2 = min(1, max(x1 + 0.01, x2 + dx)), min(1, max(y1 + 0.01, y2 + dy))
+            x2, y2 = min(1, max(x1 + min_width, x2 + dx)), min(1, max(y1 + min_height, y2 + dy))
         
         ann.x_center, ann.y_center = (x1 + x2) / 2, (y1 + y2) / 2
         ann.width, ann.height = x2 - x1, y2 - y1

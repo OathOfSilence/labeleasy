@@ -79,7 +79,8 @@ class BboxDrawingMode(AnnotationMode):
         x2 = max(0, min(1, x2))
         y2 = max(0, min(1, y2))
         
-        if abs(x2 - x1) < 0.01 or abs(y2 - y1) < 0.01:
+        min_width, min_height = self.canvas.get_min_bbox_size()
+        if abs(x2 - x1) < min_width or abs(y2 - y1) < min_height:
             self.pending_class_id = -1
             return
         
